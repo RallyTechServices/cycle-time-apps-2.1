@@ -1,0 +1,48 @@
+<!-- for confluence, the head/body tags interfere with rendering -->
+
+    <title><%= name %></title>
+    <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
+    <!--  Build Date: <%= new Date() %> -->
+    
+    <script type="text/javascript">
+        var APP_BUILD_DATE = "<%= new Date() %>";
+    </script>
+    
+    <script type="text/javascript" src="<%= auth.server %>/apps/<%= sdk %>/sdk-debug.js?apiKey=__PUT_API_KEY_HERE__"></script>
+
+<!-- for confluence, don't render as a viewport, so we override the app creation step -->
+
+    <script type="text/javascript">
+        Ext.override(Rally.sdk.Bootstrapper,{
+            _launchAppInViewport: function (className, settings, timeboxScope) {
+                console.log('_launchAppInViewport');
+                this._wireIoHeaderHandlers();
+                this.app = this._createApp(className, settings, timeboxScope);
+    
+                Ext.create('Ext.container.Container', {
+                    layout: 'fit',
+                    items: [ this.app ],
+                    renderTo: 'tech_services_target',
+                    height: 800,
+                    width: 800
+                });
+            }
+        });
+        
+    </script>
+    
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            <%= js_contents %>
+            
+               Rally.launchApp('<%= className %>', {
+                   name: '<%= name %>'
+               });
+        });
+    </script>
+    
+    <style type="text/css">
+<%= style_contents %>
+    </style>
+
+<div id="tech_services_target"></div>
