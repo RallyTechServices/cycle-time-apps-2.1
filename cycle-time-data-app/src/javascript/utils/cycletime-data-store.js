@@ -9,6 +9,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         this.includeReady = config.includeReady || false;
         this.includeBlocked = config.includeBlocked || false;
         this.stateValues = config.stateValues || [];
+        this.fromState = config.fromState;
+        this.toState = config.toState;
     },
 
     load: function(records){
@@ -56,27 +58,39 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             var oid = r.get('ObjectID'),
                 snapshots = resultsByOid[oid];
 
-            var cycleTimeData = this._mungeSnapshots(snapshots);
+            var cycleTimeData = this._mungeCycleTimeData(snapshots);
+            var timeInStateData = this._mungeTimeInStateData(snapshots);
+
             r.set("cycleTimeData",cycleTimeData);
+            r.set("timeInStateData", timeInStateData);
+
         }, this);
         return records;
     },
-    _mungeSnapshots: function(snapshots){
-       var cycleTimeData =  {snaps: snapshots};
+    _mungeCycleTimeData: function(snapshots){
 
-       cycleTimeData.blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom","minute");
-       cycleTimeData.ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom","minute");
+        var cycleTimeData = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
+
+        cycleTimeData.snaps = snapshots;
+
+        return cycleTimeData;
+    },
+    _mungeTimeInStateData: function(snapshots){
+       var timeInStateData =  {snaps: snapshots};
+
+        timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom","minute");
+        timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom","minute");
         var stateField = this.stateField;
-        console.log('stateField', stateField, this.stateValues);
-        cycleTimeData[stateField] = {};
+
+        timeInStateData[stateField] = {};
         Ext.Array.each(this.stateValues, function(stateValue){
             if (stateValue.length === 0){
                 stateValue = "Creation";
             }
-            cycleTimeData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+            timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
         });
 
-       return cycleTimeData;
+       return timeInStateData;
     },
     _fetchChunk: function(objectIDs){
         var deferred = Ext.create('Deft.Deferred');
@@ -113,7 +127,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return deferred;
     },
     _getFetchList: function(){
-        var fetch = ['_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
+        var fetch = ['FormattedID', '_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
         if (this.includeReady){
             fetch = fetch.concat(["Ready","_PreviousValues.Ready"]);
         }

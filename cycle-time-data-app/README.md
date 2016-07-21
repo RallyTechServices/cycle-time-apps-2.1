@@ -1,6 +1,25 @@
 #Cycle Time Data
 
-Cycle Time Field - The fields available for the Cycle Time field will be determined by the artifact types selected in the App Settings.  If both User Stories and Defects are selected in the App Settings, then 
+Cycle Time Field - The fields available for the Cycle Time field will be determined by the artifact types selected in the App Settings.  
+If both User Stories and Defects are selected in the App Settings, then the fields available for the State will only be those fields that exist on both the Defect and User Story.  
+
+Cycle Time Calculations:
+*  Cycle time is the time from the first time the field enters or transitions past the "From State" to the last time the field enters or transitions past the "To State".  
+*  If an object moved into the "To State" and then back into a state prior to the "To State", the cycle time will be 0 as the object is considered not to have completed the cycle.  
+
+Time in State: 
+*  Time In State for a State is a cumulative sum.
+*  Time in State for boolean fields (Ready, Blocked) is the cumulative sum of the time that field value is true.    
+*  Time in State does not exclude weekends.  
+*  The time in state for the current State will include the time that object transitioned into the field until the current date and time.
+*  If an object has been in the same state since it was created, the Time in State will be the entire lifetime of the object until the current date time.    
+
+
+
+
+
+
+
 
 ## Development Notes
 
