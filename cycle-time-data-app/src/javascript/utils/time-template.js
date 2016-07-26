@@ -65,17 +65,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             stateValue: me.stateValue,
 
             getTime: function(values){
-                console.log('values', values, this.stateName, values[this.stateName], values.currentValue);
-
-                var timeData = values[this.stateName];
-                if (timeData && this.stateValue){
-                    timeData = timeData[this.stateValue];
-                }
-
-                if (!timeData || timeData.length === 0){
-                    return "--";
-                }
-                return CArABU.technicalservices.CycleTimeCalculator.calculateTimeInState(timeData);
+                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,'--');
             },
             getCurrentIcon: function(values){
                 if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
@@ -128,10 +118,10 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
     //    return values[this.costField] || 0;
     //},
     defaultRenderer: function(value, meta, record) {
-        console.log('defaultRenderer', this.dataType, record.get('cycleTimeData'), record.get('timeInStateData'))
         var data = Ext.apply({}, record.get(this.dataType));
         data.currentValue = record.get(this.stateName);
         return this.tpl.apply(data);
     }
+
 });
 

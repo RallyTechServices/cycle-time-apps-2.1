@@ -7,11 +7,11 @@ Ext.override(Rally.ui.combobox.FieldValueComboBox, {
             this._populateStore();
         },
     _loadStoreValues: function() {
-        console.log('_loadStoreValues')
+
         this.field.getAllowedValueStore({context: this.context && _.isFunction(this.context.getDataContext) ? this.context.getDataContext() : this.context}).load({
             requester: this,
             callback: function(records, operation, success) {
-                console.log('_loadStoreValues', records, success)
+
                 var store = this.store;
                 if (!store) {
                     return;

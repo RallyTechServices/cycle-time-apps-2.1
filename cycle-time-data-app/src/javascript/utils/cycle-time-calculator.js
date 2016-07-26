@@ -27,12 +27,12 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                 inState = true;
             }
         });
-        console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
+        //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
 
     getCycleTimeData: function(snaps, field, startValue, endValue, precedence){
-        console.log('getCycleTimeData', snaps, field, startValue, endValue, precedence);
+      //  console.log('getCycleTimeData', snaps, field, startValue, endValue, precedence);
         var startIdx = -1;
 
         if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
@@ -75,10 +75,16 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         }, this);
 
-        if (cycleTime){
-            cycleTime = cycleTime/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
+
+        if (stateIdx < endIdx){
+            cycleTime = null;
+        }
+
+        if (cycleTime) {
+            cycleTime = cycleTime / CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
             cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
         }
+
         return { cycleTime: cycleTime, endDate: endDate, startDate: startDate };
     },
     getGranularityMultiplier: function(granularity){
@@ -93,7 +99,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         Ext.Array.each(dateArrays, function(a){
             var startDate = (a.length > 0) && a[0] || null,
                 endDate = (a.length > 1) && a[1] || new Date();
-            console.log('calculateTimeInState', startDate, endDate);
+
             if (startDate && endDate){
                 timeInState = timeInState + Rally.util.DateTime.getDifference(endDate, startDate, 'second');
             }
@@ -102,5 +108,51 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         timeInState = timeInState/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
 
         return timeInState.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
+    },
+    getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
+
+            var timeData = timeInStateData[stateName];
+            if (timeData && stateValue){
+                timeData = timeData[stateValue];
+            }
+
+            if (!timeData || timeData.length === 0){
+                return noDataText;
+            }
+            return CArABU.technicalservices.CycleTimeCalculator.calculateTimeInState(timeData);
+    },
+    getExportTimestampCSV: function(records){
+        var headers = ['FormattedID','State','StateValue','StartDate','EndDate'],
+            csv = [headers.join(',')],
+            getTimeSpanRow = function(timeSpan, formattedID, stateName, stateValue){
+                var startDate = timeSpan.length > 0 && timeSpan[0] && Rally.util.DateTime.format(timeSpan[0],'Y-m-d h:i:s a') || "",
+                    endDate = timeSpan.length > 1 && timeSpan[1] && Rally.util.DateTime.format(timeSpan[1],'Y-m-d h:i:s a') || "",
+                    row = [formattedID, stateName, stateValue, startDate, endDate];
+                return row.join(",");
+            };
+
+        for (var i = 0; i < records.length; i++){
+
+            var timeInStateData = records[i].get('timeInStateData'),
+                formattedID = records[i].get('FormattedID');
+            if (timeInStateData){
+                Ext.Object.each(timeInStateData, function(stateName,stateValues){
+                    if (stateName != "snaps"){
+                        if (Ext.isArray(stateValues)){ //then this is ready or blocked, a boolean state
+                            Ext.Array.each(stateValues, function(timeSpan){
+                                csv.push(getTimeSpanRow(timeSpan, formattedID, stateName, "true"));
+                            });
+                        } else {
+                            Ext.Object.each(stateValues, function(valueName, timeSpans){
+                                Ext.Array.each(timeSpans, function(timeSpan){
+                                    csv.push(getTimeSpanRow(timeSpan, formattedID, stateName, valueName));
+                                });
+                            });
+                        }
+                    }
+                });
+            }
+        }
+        return csv.join("\r\n");
     }
 });

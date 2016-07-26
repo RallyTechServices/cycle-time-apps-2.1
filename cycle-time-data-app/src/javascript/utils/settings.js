@@ -1,9 +1,9 @@
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
-    getFields: function(settings){
-        var includeUS = Ext.Array.contains(settings.includeTypes, 'hierarchicalrequirement'),
-            includeDefect = Ext.Array.contains(settings.includeTypes, 'defect');
+    getFields: function(modelNames){
+        var includeUS = Ext.Array.contains(modelNames, 'hierarchicalrequirement'),
+            includeDefect = Ext.Array.contains(modelNames, 'defect');
 
 
 
