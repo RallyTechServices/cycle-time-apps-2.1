@@ -43,7 +43,7 @@ This option will export a row for each state transition for the selected state f
  
 ## App Settings
  Use the app settings to select the artifact type(s) for the cycle time grid and also specify a query string for the data set in the query box.  
- ![ScreenShot](/images/cycle-time-app-settings.png)
+ ![ScreenShot](/images/cycle-time-app-setting.png)
 
 
 
