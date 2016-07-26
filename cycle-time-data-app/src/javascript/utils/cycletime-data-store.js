@@ -68,7 +68,9 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return records;
     },
     _mungeCycleTimeData: function(snapshots){
-
+        if (!snapshots || snapshots.length === 0){
+            return null;
+        }
         var cycleTimeData = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
 
         cycleTimeData.snaps = snapshots;
@@ -76,6 +78,9 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return cycleTimeData;
     },
     _mungeTimeInStateData: function(snapshots){
+        if (!snapshots || snapshots.length === 0){
+            return null;
+        }
        var timeInStateData =  {snaps: snapshots};
 
         timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom","minute");
