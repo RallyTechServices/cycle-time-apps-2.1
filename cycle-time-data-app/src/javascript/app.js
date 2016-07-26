@@ -27,6 +27,7 @@ Ext.define("cycle-time-data-app", {
         }
     },
 
+
     launch: function() {
        this.logger.log('Settings', this.getSettings());
 
@@ -70,7 +71,6 @@ Ext.define("cycle-time-data-app", {
             margin: 10,
             context: this.getContext(),
             _isNotHidden: this.isCycleTimeField
-
         });
 
         cbFrom = box.add({
@@ -86,8 +86,8 @@ Ext.define("cycle-time-data-app", {
             margin: 10,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
             disabled: true,
-            valueField: 'StringValue',
-            displayField: 'StringValue'
+            valueField: 'value',
+            displayField: 'value'
         });
 
         box.add({
@@ -100,8 +100,8 @@ Ext.define("cycle-time-data-app", {
             margin: '10 25 10 0',
             disabled: true,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
-            valueField: 'StringValue',
-            displayField: 'StringValue'
+            valueField: 'value',
+            displayField: 'value'
         });
 
         cbFrom.on('select', this.updateToState, this);
@@ -160,11 +160,6 @@ Ext.define("cycle-time-data-app", {
 
         this.logger.log('updateStateDropdowns', cb, cb.getValue(), cb.getRecord());
 
-        //if (!cb.renderered){
-        //    cb.on('render', this.updateStateDropdowns, this);
-        //    return;
-        //}
-
         this.getFromStateCombo().setDisabled(true);
         this.getToStateCombo().setDisabled(true);
 
@@ -174,20 +169,27 @@ Ext.define("cycle-time-data-app", {
 
         var model = cb.model;
 
-        //this.getToStateCombo().setDisabled(false);
         this.getFromStateCombo().setDisabled(false);
 
-        var store = model.getField(cb.getValue()).getAllowedValueStore();
-        //store.load();
-
-        this.getFromStateCombo().bindStore(store);
-       // this.getToStateCombo().bindStore();
-        store.load({
-            callback: function(){
-                this.getFromStateCombo()._insertNoEntry();
+        var data = [];
+        if (cb.getValue() !== "ScheduleState"){
+            data.push({value: CArABU.technicalservices.CycleTimeCalculator.creationDateText });
+        }
+        model.getField(cb.getValue()).getAllowedValueStore().load({
+            callback: function(records, operation){
+                Ext.Array.each(records,function(r){
+                    data.push({value: r.get('StringValue') });
+                });
+                var store = Ext.create('Rally.data.custom.Store',{
+                    data: data
+                });
+                this.getFromStateCombo().bindStore(store);
             },
             scope: this
         });
+
+
+
     },
     updateToState: function(cbFrom){
         this.getToStateCombo().setDisabled(true);
@@ -199,7 +201,7 @@ Ext.define("cycle-time-data-app", {
         var data = [],
             fromValue = cbFrom.getValue();
         Ext.Array.each(cbFrom.getStore().getRange(), function(d){
-            if (fromValue === d.get('StringValue') || data.length > 0){
+            if (fromValue === d.get('value') || data.length > 0){
                 data.push(d.getData());
             }
         });
@@ -325,12 +327,14 @@ Ext.define("cycle-time-data-app", {
     },
     getStateValueArray: function(){
         var arr = _.map(this.getFromStateCombo().getStore().getRange(), function(r){
-            return r.get('StringValue');
-        });
+            return r.get('value');
+        }, this);
+        Ext.Array.remove(arr, "");
         return arr;
     },
     fetchHistoricalData: function(store, nodes, records, success){
         var deferred = Ext.create('Deft.Deferred');
+
         this.setLoading(Ext.String.format("Loading historical data for {0} artifacts.",records.length));
         this.logger.log('fetchHistoricalData', store, records, success);
         var includeBlocked = this.getIncludeBlocked(),
@@ -370,7 +374,8 @@ Ext.define("cycle-time-data-app", {
 
         var columns = [{
             xtype: 'cycletimetemplatecolumn',
-            text: this.getCycleTimeColumnHeader()
+            text: this.getCycleTimeColumnHeader(),
+            flex: 1
         }];
 
         if (this.getIncludeBlocked()){
@@ -378,7 +383,8 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: "Blocked",
-                text: this.getTimeInStateColumnHeader("Blocked")
+                text: this.getTimeInStateColumnHeader("Blocked"),
+                flex: 1
             });
         }
         if (this.getIncludeReady()){
@@ -386,19 +392,27 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: 'Ready',
-                text: this.getTimeInStateColumnHeader("Ready")
+                text: this.getTimeInStateColumnHeader("Ready"),
+                flex: 1
             });
         }
 
+        var toState = this.getToStateCombo().getValue();
 
         Ext.Array.each( this.getStateValueArray(), function(s){
+            var header = this.getTimeInStateColumnHeader(s);
+            if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+            }
             columns.push({
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: this.getStateField().getValue(),
                 stateValue: s,
-                text: this.getTimeInStateColumnHeader(s)
+                text: header,
+                flex: 1
             });
+            if (s === toState){ return false; }
         }, this);
 
         return columns;
@@ -412,6 +426,7 @@ Ext.define("cycle-time-data-app", {
             'PlanEstimate'
         ].concat(this.getHistoricalDataColumns());
     },
+
     exportData: function(includeTimestamps, includeSummary){
         this.logger.log('exportData');
         var columns = this.down('rallygridboard').getGridOrBoard().columns;
@@ -438,14 +453,12 @@ Ext.define("cycle-time-data-app", {
            // this.logger.log('saveExportFiles', csv, filename);
             CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
         }
-
         if (includeTimestamps){
             var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
                 timeStampCSV = this.getExportTimestampCSV(updatedRecords);
            // this.logger.log('saveExportFiles', timeStampCSV);
             CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
         }
-
     },
     getExportTimestampCSV: function(updatedRecords){
         return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords);
@@ -469,7 +482,12 @@ Ext.define("cycle-time-data-app", {
             headers.push(this.getTimeInStateColumnHeader("Ready"));
         }
         Ext.Array.each(states, function(state){
-            headers.push(this.getTimeInStateColumnHeader(state));
+            if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
+            } else {
+                headers.push(this.getTimeInStateColumnHeader(state));
+            }
+
         }, this);
 
         var csv = [headers.join(',')];
@@ -520,7 +538,7 @@ Ext.define("cycle-time-data-app", {
             context: this.getContext(),
             modelNames: this.getModelNames(),
             toggleState: 'grid',
-            stateId: 'fred',
+            stateId: 'cycle-time-grid',
             plugins: [
                 this.getFilterPlugin(),
                 this.getFieldPickerPlugin(),
@@ -538,7 +556,8 @@ Ext.define("cycle-time-data-app", {
                 columnCfgs: this.getColumnCfgs(),
                 derivedColumns: this.getHistoricalDataColumns()
             },
-            height: this.getHeight()
+            height: this.getHeight(),
+            width: "100%"
         });
 
     },
