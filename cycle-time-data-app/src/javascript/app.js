@@ -32,6 +32,25 @@ Ext.define("cycle-time-data-app", {
 
        this.addCycleTimeSelectors();
     },
+    isCycleTimeField: function(field){
+        var whitelistFields = ['State','ScheduleState'];
+        if (Ext.Array.contains(whitelistFields, field.name)){
+            return true;
+        }
+
+        if (field.readOnly){
+            return false;
+        }
+
+        var allowed_attribute_types = ['STATE','STRING'],
+            attributeDef = field && field.attributeDefinition;
+        if (attributeDef){
+            if ( attributeDef.Constrained && Ext.Array.contains(allowed_attribute_types, attributeDef.AttributeType)) {
+                return true;
+            }
+        }
+        return false;
+    },
     addCycleTimeSelectors: function(){
 
         CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
@@ -41,45 +60,51 @@ Ext.define("cycle-time-data-app", {
         box.removeAll();
         this.getGridBox().removeAll();
 
-        //Todo add selectors here
+        this.logger.log('addCycleTimeSelectors', this.getModelNames());
         var cb = box.add({
-            xtype: 'rallycycletimefieldcombobox',
-            modelNames: this.getModelNames(),
+            xtype: 'rallyfieldcombobox',
+            model: this.getModelNames()[0],
             itemId: 'cb-StateField',
             fieldLabel: "Cycle Time Field",
             labelAlign: 'right',
             margin: 10,
-            context: this.getContext()
+            context: this.getContext(),
+            _isNotHidden: this.isCycleTimeField
 
         });
 
-        box.add({
-            xtype: 'rallyfieldvaluecombobox',
+        cbFrom = box.add({
+            xtype: 'rallycombobox',
             itemId: 'cb-fromState',
             allowBlank: true,
             allowNoEntry: true,
+            noEntryText: '-- Creation --',
+            noEntryValue: '-- Creation --',
             fieldLabel: 'From',
             labelAlign: 'right',
             labelWidth: 50,
-            noEntryText: '-- Creation --',
-            model: this.getModelNames()[0] || 'HierarchicalRequirement',
-            field: "Name",
             margin: 10,
-            disabled: true
+            store: Ext.create('Rally.data.custom.Store', {data: []}),
+            disabled: true,
+            valueField: 'StringValue',
+            displayField: 'StringValue'
         });
 
         box.add({
-            xtype: 'rallyfieldvaluecombobox',
+            xtype: 'rallycombobox',
             itemId: 'cb-toState',
             fieldLabel: 'to',
             labelWidth: 15,
             labelAlign: 'center',
             allowBlank: false,
-            model: this.getModelNames()[0] || 'HierarchicalRequirement',
-            field: "Name",
             margin: '10 25 10 0',
-            disabled: true
+            disabled: true,
+            store: Ext.create('Rally.data.custom.Store', {data: []}),
+            valueField: 'StringValue',
+            displayField: 'StringValue'
         });
+
+        cbFrom.on('select', this.updateToState, this);
 
         var btBlocked = box.add({
             xtype: 'rallybutton',
@@ -112,10 +137,13 @@ Ext.define("cycle-time-data-app", {
             text: 'Go'
         });
 
-        cb.on('select', this.updateStateDropdowns, this);
+        if (cb && cb.getValue()){
+            this.updateStateDropdowns(cb);
+        }
         cb.on('ready', this.updateStateDropdowns, this);
-        cb.on('render', this.updateStateDropdowns, this);
+        cb.on('select', this.updateStateDropdowns, this);
         bt.on('click', this.run, this);
+
     },
     toggleButton:  function(btn, state){
         this.logger.log('toggleButton', btn);
@@ -129,20 +157,54 @@ Ext.define("cycle-time-data-app", {
         }
     },
     updateStateDropdowns: function(cb){
-        this.logger.log('updateStateDropdowns', cb.getValue());
+
+        this.logger.log('updateStateDropdowns', cb, cb.getValue(), cb.getRecord());
+
+        //if (!cb.renderered){
+        //    cb.on('render', this.updateStateDropdowns, this);
+        //    return;
+        //}
 
         this.getFromStateCombo().setDisabled(true);
         this.getToStateCombo().setDisabled(true);
 
-        if (!cb || !cb.getValue()){
+        if (!cb || !cb.getValue() || !cb.getRecord()){
             return;
         }
 
-        this.getFromStateCombo().refreshStore(cb.getValue());
-        this.getToStateCombo().refreshStore(cb.getValue());
+        var model = cb.model;
 
-        this.getToStateCombo().setDisabled(false);
+        //this.getToStateCombo().setDisabled(false);
         this.getFromStateCombo().setDisabled(false);
+
+        var store = model.getField(cb.getValue()).getAllowedValueStore();
+        //store.load();
+
+        this.getFromStateCombo().bindStore(store);
+       // this.getToStateCombo().bindStore();
+        store.load({
+            callback: function(){
+                this.getFromStateCombo()._insertNoEntry();
+            },
+            scope: this
+        });
+    },
+    updateToState: function(cbFrom){
+        this.getToStateCombo().setDisabled(true);
+
+        if (!cbFrom || !cbFrom.getValue() || !cbFrom.getRecord()){
+            return;
+        }
+
+        var data = [],
+            fromValue = cbFrom.getValue();
+        Ext.Array.each(cbFrom.getStore().getRange(), function(d){
+            if (fromValue === d.get('StringValue') || data.length > 0){
+                data.push(d.getData());
+            }
+        });
+        this.getToStateCombo().setDisabled(false);
+        this.getToStateCombo().bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
 
     },
     run: function(){
@@ -263,7 +325,7 @@ Ext.define("cycle-time-data-app", {
     },
     getStateValueArray: function(){
         var arr = _.map(this.getFromStateCombo().getStore().getRange(), function(r){
-            return r.get('value');
+            return r.get('StringValue');
         });
         return arr;
     },
@@ -329,17 +391,15 @@ Ext.define("cycle-time-data-app", {
         }
 
 
-        Ext.Array.each(this.getFromStateCombo().getStore().getRange(), function(s){
-            var state = s.get('value');
+        Ext.Array.each( this.getStateValueArray(), function(s){
             columns.push({
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: this.getStateField().getValue(),
-                stateValue: state,
-                text: this.getTimeInStateColumnHeader(state)
+                stateValue: s,
+                text: this.getTimeInStateColumnHeader(s)
             });
         }, this);
-
 
         return columns;
     },
@@ -460,6 +520,7 @@ Ext.define("cycle-time-data-app", {
             context: this.getContext(),
             modelNames: this.getModelNames(),
             toggleState: 'grid',
+            stateId: 'fred',
             plugins: [
                 this.getFilterPlugin(),
                 this.getFieldPickerPlugin(),
