@@ -89,10 +89,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
 
         timeInStateData[stateField] = {};
         Ext.Array.each(this.stateValues, function(stateValue){
-            if (stateValue.length === 0){
-                stateValue = "Creation";
-            }
-            timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+           timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+
         });
 
        return timeInStateData;

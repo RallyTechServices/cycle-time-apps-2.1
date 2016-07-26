@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Jul 25 2016 23:37:42 GMT-0600 (MDT) -->
+    <!--  Build Date: Tue Jul 26 2016 10:23:52 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Jul 25 2016 23:37:42 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Tue Jul 26 2016 10:23:52 GMT-0600 (MDT)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 64243131991;
+        var CHECKSUM = 60867388318;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -208,9 +208,17 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
     precision: 0,  //number of decimal mpoints
     granularity: 'day',
+    creationDateText: "(Creation)",
+    noStateText: "(No State)",
+
+
 
     getTimeInStateData: function(snapshots, field, value, dateField){
         snapshots = _.sortBy(snapshots, dateField);
+
+        if (value === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+            value = ""
+        }
 
         var inState = snapshots[0][field] === value,
             startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
@@ -237,8 +245,11 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
 
     getCycleTimeData: function(snaps, field, startValue, endValue, precedence){
-      //  console.log('getCycleTimeData', snaps, field, startValue, endValue, precedence);
+
         var startIdx = -1;
+        precedence = _.filter(precedence, function(r){
+            return (r !== CArABU.technicalservices.CycleTimeCalculator.creationDateText);
+        });
 
         if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
             startIdx = _.indexOf(precedence, startValue);
@@ -452,10 +463,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
 
         timeInStateData[stateField] = {};
         Ext.Array.each(this.stateValues, function(stateValue){
-            if (stateValue.length === 0){
-                stateValue = "Creation";
-            }
-            timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+           timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+
         });
 
        return timeInStateData;
@@ -605,116 +614,66 @@ Ext.define('CArABU.technicalservices.Exporter',{
         document.body.removeChild(event.target);
     }
 });
-//Ext.override(Rally.ui.combobox.FieldValueComboBox, {
-//
-//        refreshStore: function(field){
-//            if (_.isString(field)) {
-//                this.field = this.model.getField(field);
-//            }
-//            this._populateStore();
-//        },
-//    _loadStoreValues: function() {
-//        console.log('_loadStoreValues')
-//        this.field.getAllowedValueStore({context: this.context && _.isFunction(this.context.getDataContext) ? this.context.getDataContext() : this.context}).load({
-//            requester: this,
-//            callback: function(records, operation, success) {
-//                console.log('_loadStoreValues', records, success)
-//                var store = this.store;
-//                if (!store) {
-//                    return;
-//                }
-//                var values = [],
-//                    labelValues = _.map(
-//                        _.filter(records, this._hasStringValue),
-//                        this._convertAllowedValueToLabelValuePair,
-//                        this
-//                    );
-//
-//                if(this.field.getType() === 'boolean') {
-//                    labelValues = labelValues.concat([
-//                        this._convertToLabelValuePair('Yes', true),
-//                        this._convertToLabelValuePair('No', false)
-//                    ]);
-//                } else if (this.field.required === false) {
-//                    var name = "-- No Entry --",
-//                        value = this.noEntryValue;
-//                    if (this.getUseNullForNoEntryValue()) {
-//                        this.noEntryValue = value = null;
-//                    }
-//                    if (this.field.attributeDefinition.AttributeType.toLowerCase() === 'rating') {
-//                        name = this.getRatingNoEntryString();
-//                        value = "None";
-//                    }
-//                    values.push(this._convertToLabelValuePair(name, value));
-//                }
-//
-//                if (this.getAllowInitialValue() && this.config.value) {
-//                    var initialValue = this.transformOriginalValue(this.config.value);
-//                    if (this._valueNotInAllowedValues(initialValue, labelValues)) {
-//                        var label = this.config.value._refObjectName || initialValue;
-//                        values.push(this._convertToLabelValuePair(label, initialValue));
-//                    }
-//                }
-//                console.log('_loadStoreValues', values.concat(labelValues))
-//                store.loadRawData(values.concat(labelValues));
-//                store.fireEvent('load', store, store.getRange(), success);
-//            },
-//            scope: this
-//        });
-//    }
-//
-//});
-//
-//
-//Ext.override(Rally.ui.grid.TreeGrid, {
-//    _mergeColumnConfigs: function(newColumns, oldColumns) {
-//
-//        var mergedColumns= _.map(newColumns, function(newColumn) {
-//            var oldColumn = _.find(oldColumns, {dataIndex: this._getColumnName(newColumn)});
-//            if (oldColumn) {
-//                return this._getColumnConfigFromColumn(oldColumn);
-//            }
-//
-//            return newColumn;
-//        }, this);
-//
-//        mergedColumns = mergedColumns.concat(this.config.derivedColumns);
-//        return mergedColumns;
-//    },
-//    _getColumnConfigsBasedOnCurrentOrder: function(columnConfigs) {
-//        var cols = _(this.headerCt.items.getRange()).map(function(column) {
-//            //override:  Added additional search for column.text
-//            return _.contains(columnConfigs, column.dataIndex) ? column.dataIndex : _.find(columnConfigs, {xtype: column.xtype, text: column.text });
-//        }).compact().value();
-//
-//        return cols;
-//    },
-//    _restoreColumnOrder: function(columnConfigs) {
-//
-//        var currentColumns = this._getColumnConfigsBasedOnCurrentOrder(columnConfigs);
-//        var addedColumns = _.filter(columnConfigs, function(config) {
-//            return !_.find(currentColumns, {dataIndex: config.dataIndex}) || Ext.isString(config);
-//        });
-//        return currentColumns.concat(addedColumns);
-//    },
-//    _applyStatefulColumns: function(columns) {
-//        if (this.alwaysShowDefaultColumns) {
-//            _.each(this.columnCfgs, function(columnCfg) {
-//                if (!_.any(columns, {dataIndex: this._getColumnName(columnCfg)})) {
-//                    columns.push(columnCfg);
-//                }
-//            }, this);
-//        }
-//
-//        if (this.config && this.config.derivedColumns){
-//            this.columnCfgs = columns.concat(this.config.derivedColumns);
-//        } else {
-//            this.columnCfgs = columns;
-//        }
-//
-//    }
-//});
-//
+Ext.apply(Ext.data.SortTypes, {
+    asUser: function(s) {
+        if (Ext.isString(s)){
+            return s;
+        }
+        return s && s.DisplayName || s._refObjectName;
+    }
+});
+
+
+
+Ext.override(Rally.ui.grid.TreeGrid, {
+    _mergeColumnConfigs: function(newColumns, oldColumns) {
+
+        var mergedColumns= _.map(newColumns, function(newColumn) {
+            var oldColumn = _.find(oldColumns, {dataIndex: this._getColumnName(newColumn)});
+            if (oldColumn) {
+                return this._getColumnConfigFromColumn(oldColumn);
+            }
+
+            return newColumn;
+        }, this);
+
+        mergedColumns = mergedColumns.concat(this.config.derivedColumns);
+        return mergedColumns;
+    },
+    _getColumnConfigsBasedOnCurrentOrder: function(columnConfigs) {
+        var cols = _(this.headerCt.items.getRange()).map(function(column) {
+            //override:  Added additional search for column.text
+            return _.contains(columnConfigs, column.dataIndex) ? column.dataIndex : _.find(columnConfigs, {xtype: column.xtype, text: column.text });
+        }).compact().value();
+
+        return cols;
+    },
+    _restoreColumnOrder: function(columnConfigs) {
+
+        var currentColumns = this._getColumnConfigsBasedOnCurrentOrder(columnConfigs);
+        var addedColumns = _.filter(columnConfigs, function(config) {
+            return !_.find(currentColumns, {dataIndex: config.dataIndex}) || Ext.isString(config);
+        });
+        return currentColumns.concat(addedColumns);
+    },
+    _applyStatefulColumns: function(columns) {
+        if (this.alwaysShowDefaultColumns) {
+            _.each(this.columnCfgs, function(columnCfg) {
+                if (!_.any(columns, {dataIndex: this._getColumnName(columnCfg)})) {
+                    columns.push(columnCfg);
+                }
+            }, this);
+        }
+
+        if (this.config && this.config.derivedColumns){
+            this.columnCfgs = columns.concat(this.config.derivedColumns);
+        } else {
+            this.columnCfgs = columns;
+        }
+
+    }
+});
+
 
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
@@ -933,6 +892,7 @@ Ext.define("cycle-time-data-app", {
         }
     },
 
+
     launch: function() {
        this.logger.log('Settings', this.getSettings());
 
@@ -976,7 +936,6 @@ Ext.define("cycle-time-data-app", {
             margin: 10,
             context: this.getContext(),
             _isNotHidden: this.isCycleTimeField
-
         });
 
         cbFrom = box.add({
@@ -992,8 +951,8 @@ Ext.define("cycle-time-data-app", {
             margin: 10,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
             disabled: true,
-            valueField: 'StringValue',
-            displayField: 'StringValue'
+            valueField: 'value',
+            displayField: 'value'
         });
 
         box.add({
@@ -1006,8 +965,8 @@ Ext.define("cycle-time-data-app", {
             margin: '10 25 10 0',
             disabled: true,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
-            valueField: 'StringValue',
-            displayField: 'StringValue'
+            valueField: 'value',
+            displayField: 'value'
         });
 
         cbFrom.on('select', this.updateToState, this);
@@ -1066,11 +1025,6 @@ Ext.define("cycle-time-data-app", {
 
         this.logger.log('updateStateDropdowns', cb, cb.getValue(), cb.getRecord());
 
-        //if (!cb.renderered){
-        //    cb.on('render', this.updateStateDropdowns, this);
-        //    return;
-        //}
-
         this.getFromStateCombo().setDisabled(true);
         this.getToStateCombo().setDisabled(true);
 
@@ -1080,20 +1034,27 @@ Ext.define("cycle-time-data-app", {
 
         var model = cb.model;
 
-        //this.getToStateCombo().setDisabled(false);
         this.getFromStateCombo().setDisabled(false);
 
-        var store = model.getField(cb.getValue()).getAllowedValueStore();
-        //store.load();
-
-        this.getFromStateCombo().bindStore(store);
-       // this.getToStateCombo().bindStore();
-        store.load({
-            callback: function(){
-                this.getFromStateCombo()._insertNoEntry();
+        var data = [];
+        if (cb.getValue() !== "ScheduleState"){
+            data.push({value: CArABU.technicalservices.CycleTimeCalculator.creationDateText });
+        }
+        model.getField(cb.getValue()).getAllowedValueStore().load({
+            callback: function(records, operation){
+                Ext.Array.each(records,function(r){
+                    data.push({value: r.get('StringValue') });
+                });
+                var store = Ext.create('Rally.data.custom.Store',{
+                    data: data
+                });
+                this.getFromStateCombo().bindStore(store);
             },
             scope: this
         });
+
+
+
     },
     updateToState: function(cbFrom){
         this.getToStateCombo().setDisabled(true);
@@ -1105,7 +1066,7 @@ Ext.define("cycle-time-data-app", {
         var data = [],
             fromValue = cbFrom.getValue();
         Ext.Array.each(cbFrom.getStore().getRange(), function(d){
-            if (fromValue === d.get('StringValue') || data.length > 0){
+            if (fromValue === d.get('value') || data.length > 0){
                 data.push(d.getData());
             }
         });
@@ -1231,12 +1192,14 @@ Ext.define("cycle-time-data-app", {
     },
     getStateValueArray: function(){
         var arr = _.map(this.getFromStateCombo().getStore().getRange(), function(r){
-            return r.get('StringValue');
-        });
+            return r.get('value');
+        }, this);
+        Ext.Array.remove(arr, "");
         return arr;
     },
     fetchHistoricalData: function(store, nodes, records, success){
         var deferred = Ext.create('Deft.Deferred');
+
         this.setLoading(Ext.String.format("Loading historical data for {0} artifacts.",records.length));
         this.logger.log('fetchHistoricalData', store, records, success);
         var includeBlocked = this.getIncludeBlocked(),
@@ -1276,7 +1239,8 @@ Ext.define("cycle-time-data-app", {
 
         var columns = [{
             xtype: 'cycletimetemplatecolumn',
-            text: this.getCycleTimeColumnHeader()
+            text: this.getCycleTimeColumnHeader(),
+            flex: 1
         }];
 
         if (this.getIncludeBlocked()){
@@ -1284,7 +1248,8 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: "Blocked",
-                text: this.getTimeInStateColumnHeader("Blocked")
+                text: this.getTimeInStateColumnHeader("Blocked"),
+                flex: 1
             });
         }
         if (this.getIncludeReady()){
@@ -1292,19 +1257,27 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: 'Ready',
-                text: this.getTimeInStateColumnHeader("Ready")
+                text: this.getTimeInStateColumnHeader("Ready"),
+                flex: 1
             });
         }
 
+        var toState = this.getToStateCombo().getValue();
 
         Ext.Array.each( this.getStateValueArray(), function(s){
+            var header = this.getTimeInStateColumnHeader(s);
+            if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+            }
             columns.push({
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: this.getStateField().getValue(),
                 stateValue: s,
-                text: this.getTimeInStateColumnHeader(s)
+                text: header,
+                flex: 1
             });
+            if (s === toState){ return false; }
         }, this);
 
         return columns;
@@ -1318,6 +1291,7 @@ Ext.define("cycle-time-data-app", {
             'PlanEstimate'
         ].concat(this.getHistoricalDataColumns());
     },
+
     exportData: function(includeTimestamps, includeSummary){
         this.logger.log('exportData');
         var columns = this.down('rallygridboard').getGridOrBoard().columns;
@@ -1344,14 +1318,12 @@ Ext.define("cycle-time-data-app", {
            // this.logger.log('saveExportFiles', csv, filename);
             CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
         }
-
         if (includeTimestamps){
             var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
                 timeStampCSV = this.getExportTimestampCSV(updatedRecords);
            // this.logger.log('saveExportFiles', timeStampCSV);
             CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
         }
-
     },
     getExportTimestampCSV: function(updatedRecords){
         return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords);
@@ -1375,7 +1347,12 @@ Ext.define("cycle-time-data-app", {
             headers.push(this.getTimeInStateColumnHeader("Ready"));
         }
         Ext.Array.each(states, function(state){
-            headers.push(this.getTimeInStateColumnHeader(state));
+            if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
+            } else {
+                headers.push(this.getTimeInStateColumnHeader(state));
+            }
+
         }, this);
 
         var csv = [headers.join(',')];
@@ -1426,7 +1403,7 @@ Ext.define("cycle-time-data-app", {
             context: this.getContext(),
             modelNames: this.getModelNames(),
             toggleState: 'grid',
-            stateId: 'fred',
+            stateId: 'cycle-time-grid',
             plugins: [
                 this.getFilterPlugin(),
                 this.getFieldPickerPlugin(),
@@ -1444,7 +1421,8 @@ Ext.define("cycle-time-data-app", {
                 columnCfgs: this.getColumnCfgs(),
                 derivedColumns: this.getHistoricalDataColumns()
             },
-            height: this.getHeight()
+            height: this.getHeight(),
+            width: "100%"
         });
 
     },
