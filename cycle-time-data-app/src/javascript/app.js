@@ -22,7 +22,8 @@ Ext.define("cycle-time-data-app", {
             includeTypes:  ['hierarchicalrequirement','defect'],
             queryFilter: "",
             granularity: 'day',
-            precision: 2
+            precision: 2,
+            exportLimit: 1000
         }
     },
 
@@ -38,6 +39,7 @@ Ext.define("cycle-time-data-app", {
 
         var box = this.getSelectorBox();
         box.removeAll();
+        this.getGridBox().removeAll();
 
         //Todo add selectors here
         var cb = box.add({
@@ -161,32 +163,87 @@ Ext.define("cycle-time-data-app", {
         }
         return fetch;
     },
-    buildExportDataStore: function(fetchList){
+    getWsapiArtifactCount: function(config){
+        config.limit = 1;
+        config.fetch = ['ObjectID'];
+        config.pageSize = 1;
         var deferred = Ext.create('Deft.Deferred');
-        Ext.create('Rally.data.wsapi.artifact.Store',{
-            models: this.getModelNames(),
-            fetch: fetchList,
-            filters: this.getQueryFilter(), //todo add gridboard filters
-            limit: Infinity
-        }).load({
+        Ext.create('Rally.data.wsapi.artifact.Store',config).load({
             callback: function(records, operation){
-                this.logger.log('buildExportDataStore callback');
+                this.logger.log('getWsapiArtifactCount', operation);
                 if (operation.wasSuccessful()){
-                    this.fetchHistoricalData(null,null,records, true).then({
-                        success: function(updatedRecords){
-                            deferred.resolve(updatedRecords);
-                        },
-                        failure: function(msg){
-                            deferred.reject(msg);
-                        },
-                        scope: this
-                    });
+                    var count = operation && operation.resultSet && operation.resultSet.total;
+                    deferred.resolve(count);
                 } else {
-                    deferred.reject("Error fetching historical data:  " + operation.error.errors.join(','));
+                    deferred.reject("Unable to get aritfact count:  " + operation.error.errors.join(','));
                 }
             },
             scope: this
         });
+
+        return deferred;
+    },
+    buildExportDataStore: function(fetchList){
+
+        var filters = this.down('rallygridboard').currentCustomFilter &&
+            this.down('rallygridboard').currentCustomFilter.filters &&
+            this.down('rallygridboard').currentCustomFilter.filters[0] || null;
+
+        this.logger.log('buildExportDataStore', fetchList, this.getQueryFilter(), filters && filters.toString() || "No custom filters");
+
+        if (this.getQueryFilter()){
+            if (filters){
+                filters = filters.and(this.getQueryFilter());
+            } else {
+                filters = this.getQueryFilter();
+            }
+        }
+        filters = filters || [];
+
+        var deferred = Ext.create('Deft.Deferred');
+
+        this.getWsapiArtifactCount({
+            models: this.getModelNames(),
+            filters: filters
+        }).then({
+            success: function(totalResultCount){
+                if (totalResultCount > this.getExportLimit()){
+                    Rally.ui.notify.Notifier.showWarning({
+                        message: Ext.String.format("Only {0} of {1} records will be exported to maintain acceptable performance.  Please refine your filter criteria to export all records.", this.getExportLimit(), totalResultCount)
+                    });
+                }
+                Ext.create('Rally.data.wsapi.artifact.Store',{
+                    models: this.getModelNames(),
+                    fetch: fetchList,
+                    filters: filters || [],
+                    limit: this.getExportLimit()
+                }).load({
+                    callback: function(records, operation){
+                        this.logger.log('buildExportDataStore callback');
+                        if (operation.wasSuccessful()){
+                            this.fetchHistoricalData(null,null,records, true).then({
+                                success: function(updatedRecords){
+                                    deferred.resolve(updatedRecords);
+                                },
+                                failure: function(msg){
+                                    deferred.reject(msg);
+                                },
+                                scope: this
+                            });
+                        } else {
+                            deferred.reject("Error fetching historical data:  " + operation.error.errors.join(','));
+                        }
+                    },
+                    scope: this
+                });
+            },
+            failure: function(msg){
+                deferred.resolve(msg);
+            },
+            scope: this
+        });
+
+
         return deferred;
     },
     buildCurrentDataStore: function(){
@@ -194,12 +251,15 @@ Ext.define("cycle-time-data-app", {
         Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
             models: this.getModelNames(),
             enableHierarchy: false,
-            filters: this.getQueryFilter(),
+            filters: this.getQueryFilter() || [],
             fetch: fetchList
         }).then({
             success: this.buildGrid,
             scope: this
         });
+    },
+    getExportLimit: function(){
+        return this.getSetting('exportLimit') || 1000;
     },
     getStateValueArray: function(){
         var arr = _.map(this.getFromStateCombo().getStore().getRange(), function(r){
@@ -209,6 +269,7 @@ Ext.define("cycle-time-data-app", {
     },
     fetchHistoricalData: function(store, nodes, records, success){
         var deferred = Ext.create('Deft.Deferred');
+        this.setLoading(Ext.String.format("Loading historical data for {0} artifacts.",records.length));
         this.logger.log('fetchHistoricalData', store, records, success);
         var includeBlocked = this.getIncludeBlocked(),
             includeReady = this.getIncludeReady(),
@@ -228,18 +289,26 @@ Ext.define("cycle-time-data-app", {
         }).load(records).then({
             success: function(updatedRecords){ deferred.resolve(updatedRecords); },
             failure: function(msg) { deferred.reject(msg); }
-        });
+        }).always(function(){
+            this.setLoading(false);
+        }, this);
         return deferred;
 
     },
     updateHistoricalData: function(updatedRecords){
         this.logger.log('updateHistoricalData', updatedRecords);
     },
+    getCycleTimeColumnHeader: function(){
+        return Ext.String.format("Cycle time from {0} to {1} ({2}s)", this.getFromStateCombo().getValue(), this.getToStateCombo().getValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
+    },
+    getTimeInStateColumnHeader: function(stateName){
+        return Ext.String.format("Time in {0} ({1}s)",stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
+    },
     getHistoricalDataColumns: function(){
 
         var columns = [{
             xtype: 'cycletimetemplatecolumn',
-            text: Ext.String.format("Cycle time from {0} to {1} ({2}s)", this.getFromStateCombo().getValue(), this.getToStateCombo().getValue(), CArABU.technicalservices.CycleTimeCalculator.granularity)
+            text: this.getCycleTimeColumnHeader()
         }];
 
         if (this.getIncludeBlocked()){
@@ -247,7 +316,7 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: "Blocked",
-                text: Ext.String.format("Time in Blocked ({0}s)",CArABU.technicalservices.CycleTimeCalculator.granularity)
+                text: this.getTimeInStateColumnHeader("Blocked")
             });
         }
         if (this.getIncludeReady()){
@@ -255,7 +324,7 @@ Ext.define("cycle-time-data-app", {
                 xtype: 'timetemplatecolumn',
                 dataType: 'timeInStateData',
                 stateName: 'Ready',
-                text: Ext.String.format("Time in Ready ({0}s)",CArABU.technicalservices.CycleTimeCalculator.granularity)
+                text: this.getTimeInStateColumnHeader("Ready")
             });
         }
 
@@ -267,7 +336,7 @@ Ext.define("cycle-time-data-app", {
                 dataType: 'timeInStateData',
                 stateName: this.getStateField().getValue(),
                 stateValue: state,
-                text: Ext.String.format("Time in {0} ({1}s)", state || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity)
+                text: this.getTimeInStateColumnHeader(state)
             });
         }, this);
 
@@ -285,31 +354,35 @@ Ext.define("cycle-time-data-app", {
     },
     exportData: function(includeTimestamps, includeSummary){
         this.logger.log('exportData');
-        var fetchList = this.getCurrentFetchList();  //todo add gridboard fields
+        var columns = this.down('rallygridboard').getGridOrBoard().columns;
+
+        var fetchList = _.map(_.filter(columns, function(c){ return c.dataIndex || false; }), function(c){
+            return c.dataIndex;
+        });
 
         this.buildExportDataStore(fetchList).then({
             success: function(updatedRecords){
                 this.logger.log('buildExportDataStore success', updatedRecords);
-                this.saveExportFiles(updatedRecords, fetchList, includeTimestamps, includeSummary)
+                this.saveExportFiles(updatedRecords, columns, includeTimestamps, includeSummary)
             },
             failure: this._showErrorStatus,
             scope: this
         });
 
     },
-    saveExportFiles: function(updatedRecords, fetchList, includeTimestamps, includeSummary){
+    saveExportFiles: function(updatedRecords, columns, includeTimestamps, includeSummary){
 
         if (includeSummary){
             var filename = Ext.String.format("cycle-time-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
-                csv = this.getExportSummaryCSV(updatedRecords, fetchList);
-            this.logger.log('saveExportFiles', csv, filename);
+                csv = this.getExportSummaryCSV(updatedRecords, columns);
+           // this.logger.log('saveExportFiles', csv, filename);
             CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
         }
 
         if (includeTimestamps){
             var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
                 timeStampCSV = this.getExportTimestampCSV(updatedRecords);
-            this.logger.log('saveExportFiles', timeStampCSV);
+           // this.logger.log('saveExportFiles', timeStampCSV);
             CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
         }
 
@@ -317,19 +390,27 @@ Ext.define("cycle-time-data-app", {
     getExportTimestampCSV: function(updatedRecords){
         return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords);
     },
-    getExportSummaryCSV: function(updatedRecords, fetchList){
-        var states = this.getStateValueArray(),
-            includeBlocked = this.getIncludeBlocked(),
-            includeReady = this.getIncludeReady(),
-            headers = fetchList.concat(['CycleTime (Days)']);
+    getExportSummaryCSV: function(updatedRecords, columns){
+        var standardColumns = _.filter(columns, function(c){ return c.dataIndex || null; }),
+            headers = _.map(standardColumns, function(c){ if (c.text === "ID") {return "Formatted ID"; } return c.text; }),
+            fetchList = _.map(standardColumns, function(c){ return c.dataIndex; });
 
+        this.logger.log('getExportSummaryCSV', headers, fetchList);
+        var states = this.getStateValueArray(),
+            stateField = this.getStateField().getValue(),
+            includeBlocked = this.getIncludeBlocked(),
+            includeReady = this.getIncludeReady();
+
+        headers.push(this.getCycleTimeColumnHeader());
         if (includeBlocked){
-            headers.push('Time in Blocked');
+            headers.push(this.getTimeInStateColumnHeader("Blocked"));
         }
         if (includeReady){
-            headers.push('Time in Ready');
+            headers.push(this.getTimeInStateColumnHeader("Ready"));
         }
-        headers = headers.concat(states);
+        Ext.Array.each(states, function(state){
+            headers.push(this.getTimeInStateColumnHeader(state));
+        }, this);
 
         var csv = [headers.join(',')];
         for (var i = 0; i < updatedRecords.length; i++){
@@ -337,7 +418,11 @@ Ext.define("cycle-time-data-app", {
                 record = updatedRecords[i];
 
             for (var j = 0; j < fetchList.length; j++){
-                row.push(record.get(fetchList[j]) || "");
+                var val = record.get(fetchList[j]);
+                if (Ext.isObject(val)){
+                    val = val._refObjectName;
+                }
+                row.push(val || "");
             }
             //CycleTime
             row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
@@ -349,8 +434,9 @@ Ext.define("cycle-time-data-app", {
             if (includeReady){
                 row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null, ""));
             }
+
             for (var s = 0; s < states.length; s++){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, states[s], record.get(states[s]), ""));
+                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
             }
             csv.push(row.join(",")); //TODO need to escape things
         }
@@ -386,7 +472,7 @@ Ext.define("cycle-time-data-app", {
                 folderSort: false,
                 shouldShowRowActionsColumn: false,
                 storeConfig: {
-                    filters: this.getQueryFilter()
+                    filters: this.getQueryFilter() || []
                 },
                 columnCfgs: this.getColumnCfgs(),
                 derivedColumns: this.getHistoricalDataColumns()
@@ -415,7 +501,8 @@ Ext.define("cycle-time-data-app", {
                     text: 'Export Summary and Timestamps...',
                     handler: function(){
                         this.exportData(true, true);
-                    }
+                    },
+                    scope: this
                 }
             ],
             buttonConfig: {
@@ -457,7 +544,7 @@ Ext.define("cycle-time-data-app", {
         if (filter && filter.length > 0){
             return Rally.data.wsapi.Filter.fromQueryString(filter);
         }
-        return [];
+        return null;
     },
     getIncludeBlocked: function(){
         return this.down('#btBlocked').pressed;
