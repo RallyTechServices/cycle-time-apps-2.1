@@ -32,7 +32,6 @@ Ext.define('CArABU.technicalservices.CycleTimeFieldCombobox', {
 
             this.on('afterrender', this._onAfterRender, this);
 
-            console.log('_populateStore', this.modelNames);
             if (this.modelNames) {
                 this._fetchModels();
             }
@@ -58,7 +57,6 @@ Ext.define('CArABU.technicalservices.CycleTimeFieldCombobox', {
 
             var modelFields = {},
                 whitelistFields = ['ScheduleState','State'];
-            console.log('_populateStore', this.models);
 
             var tempModel = null;
             Ext.Object.each(this.models, function(key, model){
@@ -72,16 +70,13 @@ Ext.define('CArABU.technicalservices.CycleTimeFieldCombobox', {
                     }
                 });
             });
-            console.log('_populateStore', modelFields, this.models, Ext.Object.getValues(modelFields));
 
             var commonFields = Ext.Array.intersect.apply(null,Ext.Object.getValues(modelFields));
             var data = [];
             Ext.Array.each(commonFields, function(fieldName){
-                console.log('fieldName', fieldName)
                 var field = tempModel.getField(fieldName);
                 data.push(this._convertFieldToLabelValuePair(field));
             }, this);
-            console.log('data',data);
             data = _.sortBy(data, 'name');
 
             this.store.loadRawData(data);
@@ -94,7 +89,6 @@ Ext.define('CArABU.technicalservices.CycleTimeFieldCombobox', {
         },
 
         _convertFieldToLabelValuePair: function(field) {
-            console.log('field',field);
             var pair = {
                 fieldDefinition: field
             };

@@ -94,6 +94,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     },
     _fetchChunk: function(objectIDs){
         var deferred = Ext.create('Deft.Deferred');
+        this.logger.log('_fetchChunks', objectIDs.length);
 
         Ext.create('Rally.data.lookback.SnapshotStore',{
             fetch: this._getFetchList(),
