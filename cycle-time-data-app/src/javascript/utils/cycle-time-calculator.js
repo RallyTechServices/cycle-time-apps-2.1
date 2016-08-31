@@ -6,8 +6,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     creationDateText: "(Creation)",
     noStateText: "(No State)",
 
-
-
     getTimeInStateData: function(snapshots, field, value, dateField){
         snapshots = _.sortBy(snapshots, dateField);
 
