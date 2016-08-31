@@ -1,3 +1,31 @@
+Ext.define('Rally.ui.LeftRight', {
+    alias: 'widget.rallyleftright',
+    extend: 'Ext.container.Container',
+
+    cls: 'rui-leftright',
+    defaults: {
+        xtype: 'container'
+    },
+    items: [
+        {
+            itemId: 'left',
+            cls: 'rly-left'
+        },
+        {
+            itemId: 'right',
+            cls: 'rly-right'
+        }
+    ],
+
+    getLeft: function() {
+        return this.down('#left');
+    },
+
+    getRight: function() {
+        return this.down('#right');
+    }
+});
+
 Ext.apply(Ext.data.SortTypes, {
     asUser: function(s) {
         if (Ext.isString(s)){
@@ -36,8 +64,22 @@ Ext.override(Rally.ui.grid.TreeGrid, {
 
         var currentColumns = this._getColumnConfigsBasedOnCurrentOrder(columnConfigs);
         var addedColumns = _.filter(columnConfigs, function(config) {
-            return !_.find(currentColumns, {dataIndex: config.dataIndex}) || Ext.isString(config);
+            if (Ext.isString(config)){
+                return true;
+            }
+            if (!_.find(currentColumns, {dataIndex: config.dataIndex})){
+                return true;
+            }
+
+            if (!_.find(currentColumns, {text: config.text})){
+                    return true;
+            }
+
+            return false;
         });
+
+        console.log('added columns', addedColumns, columnConfigs, currentColumns);
+
         return currentColumns.concat(addedColumns);
     },
     _applyStatefulColumns: function(columns) {

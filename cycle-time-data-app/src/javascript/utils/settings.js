@@ -2,8 +2,8 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
     getFields: function(modelNames){
-        var includeUS = Ext.Array.contains(modelNames, 'hierarchicalrequirement'),
-            includeDefect = Ext.Array.contains(modelNames, 'defect');
+        var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
+            includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
 
 
@@ -24,9 +24,15 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             },
             margin: '0 0 50 0',
                 items: [
-                    { boxLabel: 'User Story', name: 'includeTypes', inputValue: 'hierarchicalrequirement', checked: includeUS },
-                    { boxLabel: 'Defect', name: 'includeTypes', inputValue: 'defect', checked: includeDefect }
+                    { boxLabel: 'User Story', name: 'includeTypes', inputValue: 'HierarchicalRequirement', checked: includeUS },
+                    { boxLabel: 'Defect', name: 'includeTypes', inputValue: 'Defect', checked: includeDefect }
                 ]
+        },{
+            xtype: 'rallynumberfield',
+            fieldLabel: 'Max Export Limit',
+            name: 'exportLimit',
+            minValue: 10,
+            maxValue: 10000
         },{
             xtype: 'textarea',
             fieldLabel: 'Query',
