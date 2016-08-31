@@ -103,9 +103,6 @@ Ext.define("cycle-time-data-app", {
             noEntryValue: '-- Creation --',
             fieldLabel: 'From',
             labelAlign: 'right',
-            stateful: true,
-            stateId: 'cbFromState',
-            stateEvents: ['select'],
             labelWidth: 50,
             margin: 10,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
@@ -122,17 +119,14 @@ Ext.define("cycle-time-data-app", {
             labelAlign: 'center',
             allowBlank: false,
             margin: '10 5 10 0',
-            stateful: true,
-            stateId: 'cbToState',
-            //disabled: true,
-            stateEvents: ['select'],
+            disabled: true,
             store: Ext.create('Rally.data.custom.Store', {data: []}),
             valueField: 'value',
             displayField: 'value'
         });
 
         this.cycleTimeFromState.on('select', this.updateToState, this);
-        this.cycleTimeToState.on('select', this.updateGrid, this);
+      //  this.cycleTimeToState.on('select', this.updateAppState, this);
 
         this.includeBlocked = Ext.create('Rally.ui.Button',{
             //xtype: 'rallybutton',
@@ -141,19 +135,43 @@ Ext.define("cycle-time-data-app", {
             margin: '10 5 10 5',
             cls: 'secondary rly-small',
             iconCls: 'icon-blocked',
-            pressed: false,
-            toolTipText: "Calculate time in Blocked state"
+            stateId: 'btBlocked',
+            stateEvents: ['toggle'],
+            stateful: true,
+            toolTipText: "Calculate time in Blocked state",
+            getState: function(){
+                return {pressed: this.pressed};
+            },
+            applyState: function(state){
+                if (state && state.pressed) {
+                    this.pressed = true;
+                    this.removeCls('secondary');
+                    this.addCls('primary')
+                }
+            },
 
         });
 
         this.includeReady = Ext.create('Rally.ui.Button',{
-            //xtype: 'rallybutton',
             enableToggle: true,
             itemId: 'btReady',
             margin: '10 5 10 5',
             iconCls: 'icon-ok',
             cls: 'secondary rly-small',
             pressed: false,
+            stateId: 'btReady',
+            stateEvents: ['toggle'],
+            stateful: true,
+            getState: function(){
+                return {pressed: this.pressed};
+            },
+            applyState: function(state){
+                if (state && state.pressed) {
+                    this.pressed = true;
+                    this.removeCls('secondary');
+                    this.addCls('primary')
+                }
+            },
             toolTipText: "Calculate time in Ready state"
         });
         this.includeBlocked.on('toggle', this.toggleButton, this);
@@ -161,14 +179,13 @@ Ext.define("cycle-time-data-app", {
 
         this.startDatePicker = Ext.create('Rally.ui.DateField',{
             margin: '10 5 10 5',
-            fieldLabel: 'Date From',
+            fieldLabel: 'Cycle End Date From',
             labelSeparator: "",
             labelAlign: 'right',
-            labelWidth: 75,
+            labelWidth: 150,
             stateful: true,
             stateId: 'dtStart',
-            stateEvents: ['blur'],
-            width: 175
+            stateEvents: ['blur']
         });
 
         this.endDatePicker = Ext.create('Rally.ui.DateField',{
@@ -179,13 +196,17 @@ Ext.define("cycle-time-data-app", {
             labelWidth: 15,
             stateful: true,
             stateId: 'dtEnd',
-            stateEvents: ['blur'],
-            width: 115
+            stateEvents: ['blur']
         });
 
-        this.startDatePicker.on('blur', this.updateGrid, this);
-        this.endDatePicker.on('blur', this.updateGrid, this);
+        //this.startDatePicker.on('blur', this.updateGrid, this);
+        //this.endDatePicker.on('blur', this.updateGrid, this);
 
+        this.goButton = Ext.create('Rally.ui.Button',{
+            margin: '10 5 10 5',
+            text: 'Update'
+        });
+        this.goButton.on('click', this.updateGrid, this);
 
         if (this.cycleTimeField && this.cycleTimeField.getValue()){
             this.updateStateDropdowns(this.cycleTimeField);
@@ -207,7 +228,7 @@ Ext.define("cycle-time-data-app", {
             btn.removeCls('primary');
             btn.addCls('secondary');
         }
-        this.updateGrid();
+        //this.updateGrid();
     },
     updateStateDropdowns: function(cb){
 
@@ -241,6 +262,7 @@ Ext.define("cycle-time-data-app", {
             scope: this
         });
     },
+
     updateToState: function(cbFrom){
         this.logger.log('updateToState', cbFrom);
         this.getToStateCombo().setDisabled(true);
@@ -269,6 +291,11 @@ Ext.define("cycle-time-data-app", {
         CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
         CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
 
+
+        if (!this.hasCycleTimeParameters()) {
+            this._showStatus("Please select valid Cycle Time parameters to see cycle time data");
+            return;
+        }
 
         grid.getStore().getInitialConfig().fetch = fetchList;
         grid.config.derivedColumns = this.getHistoricalDataColumns();
@@ -438,7 +465,7 @@ Ext.define("cycle-time-data-app", {
         var deferred = Ext.create('Deft.Deferred');
 
         if (!this.hasCycleTimeParameters()){
-            this._showStatus("Please select valid Cycle Time parameters to see cycle time data");
+            //this._showStatus("Please select valid Cycle Time parameters to see cycle time data");
             deferred.resolve(records);
         } else {
 
@@ -760,16 +787,26 @@ Ext.define("cycle-time-data-app", {
                     overflowX: 'hidden'
                 },{
                 xtype: 'container',
-                layout: 'hbox',
-                items: [
-                    this.cycleTimeField,
-                    this.cycleTimeFromState,
-                    this.cycleTimeToState,
-                    this.startDatePicker,
-                    this.endDatePicker,
-                    this.includeReady,
-                    this.includeBlocked
-                ]
+                layout: 'vbox',
+                items: [{
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        this.cycleTimeField,
+                        this.cycleTimeFromState,
+                        this.cycleTimeToState,
+                        this.includeReady,
+                        this.includeBlocked,
+                        this.goButton
+                    ]
+                },{
+                    xtype: 'container',
+                    layout: 'hbox',
+                    items: [
+                        this.startDatePicker,
+                        this.endDatePicker
+                    ]
+                }]
             }
             ],
             gridConfig: {
