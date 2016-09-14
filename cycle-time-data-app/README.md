@@ -30,10 +30,19 @@ Hover over the Time In State or Cycle Time calculations to see the dates used in
 *  The time in state for the current State will include the time that object transitioned into the field until the current date and time.
 *  If an object has been in the same state since it was created, the Time in State will be the entire lifetime of the object until the current date time.    
 
+###Legacy States
+The Cycle Time app uses current allowed values for the selected field to get a state precedence when calculating cycle time.
+Thus, if an item was in a state that no longer exists in the allowed values (aka Legacy State), it will not be recognized and will be treated the same as "no state".  
+The reason for this is becuase we cannot determine where in the precedence order of states the legacy state existed.
+
 ##Exports
 
 ###Export Summary...
 Cycle time and Time in State summary data can be exported using this menu item of the grid.  There will be one row per artifact shown on the grid that contains the selected cycle time data and all time in state data.  
+
+Cycle Time Start Date and Cycle time end date are also exported with the Summary.  
+Cycle Time Start Date is first date/time that the item enters the selected Start state.  
+Cycle Time End Date is the last time that the item enters the selected End state.  
 
 ###Export with Timestamps...
 This option will export a row for each state transition for the selected state field for all artifacts on the grid. 
