@@ -128,7 +128,33 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             if (!timeData || timeData.length === 0){
                 return noDataText;
             }
+
             return CArABU.technicalservices.CycleTimeCalculator.calculateTimeInState(timeData);
+    },
+    getFirstStartDate: function(timeInStateData, stateName, stateValue){
+
+
+        var timeData = timeInStateData[stateName];
+        if (timeData && stateValue){
+            timeData = timeData[stateValue];
+        }
+
+        if (timeData && timeData.length > 0){
+            return timeData[0][0];
+        }
+        return null;
+    },
+    getLastEndDate: function(timeInStateData, stateName, stateValue){
+        console.log('getLastEndDate', stateName, stateValue)
+        var timeData = timeInStateData[stateName];
+        if (timeData && stateValue){
+            timeData = timeData[stateValue];
+        }
+        console.log('getLastEndDate', timeData)
+        if (timeData && timeData.length > 0){
+            return timeData[timeData.length-1] && timeData[timeData.length-1][0] || null ;
+        }
+        return null;
     },
     getExportTimestampCSV: function(records){
         var headers = ['FormattedID','State','StateValue','StartDate','EndDate'],
