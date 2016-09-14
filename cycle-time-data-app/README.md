@@ -9,6 +9,9 @@ This is the state from which the cycletime calculation will begin.  If (Creation
 
 #### To State
 This is the state that the artifact must transition into or past for the cycle time calculation to end.  
+
+#### Cycle Time From Date 
+If a date is selected, the chart will only calculate cycle time for 
   
 ![ScreenShot](/images/cycle-time-app.png)
   

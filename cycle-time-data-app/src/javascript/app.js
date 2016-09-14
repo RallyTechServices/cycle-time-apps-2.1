@@ -592,6 +592,12 @@ Ext.define("cycle-time-data-app", {
     getCycleTimeColumnHeader: function(){
         return Ext.String.format("Cycle time from {0} to {1} ({2}s)", this.getFromStateCombo().getValue(), this.getToStateCombo().getValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
+    getCycleTimeStartColumnHeader: function(){
+        return "Cycle Time Start Date";
+    },
+    getCycleTimeEndColumnHeader: function(){
+        return "Cycle Time End Date";
+    },
     getTimeInStateColumnHeader: function(stateName){
         return Ext.String.format("Time in {0} ({1}s)",stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
@@ -709,12 +715,16 @@ Ext.define("cycle-time-data-app", {
             includeReady = this.getIncludeReady();
 
         headers.push(this.getCycleTimeColumnHeader());
+        headers.push(this.getCycleTimeStartColumnHeader());
+        headers.push(this.getCycleTimeEndColumnHeader());
+
         if (includeBlocked){
             headers.push(this.getTimeInStateColumnHeader("Blocked"));
         }
         if (includeReady){
             headers.push(this.getTimeInStateColumnHeader("Ready"));
         }
+
         Ext.Array.each(states, function(state){
             if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
                 headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
@@ -725,6 +735,8 @@ Ext.define("cycle-time-data-app", {
         }, this);
 
         var csv = [headers.join(',')];
+
+
         for (var i = 0; i < updatedRecords.length; i++){
             var row = [],
                 record = updatedRecords[i];
@@ -737,15 +749,24 @@ Ext.define("cycle-time-data-app", {
                 row.push(val || "");
             }
             //CycleTime
+            var timeInStateData = record.get('timeInStateData');
+
             row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
 
-            var timeInStateData = record.get('timeInStateData');
+            var startDate = CArABU.technicalservices.CycleTimeCalculator.getFirstStartDate(timeInStateData,stateField, this.getFromStateCombo().getValue()),
+                endDate = CArABU.technicalservices.CycleTimeCalculator.getLastEndDate(timeInStateData,stateField, this.getToStateCombo().getValue());
+
+            row.push(startDate && Rally.util.DateTime.format(startDate,'Y-m-d h:i:s a') || "");
+            row.push(endDate && Rally.util.DateTime.format(endDate,'Y-m-d h:i:s a') || "");
+
             if (includeBlocked){
                 row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
             }
             if (includeReady){
                 row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null, ""));
             }
+
+
 
             for (var s = 0; s < states.length; s++){
                 row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
