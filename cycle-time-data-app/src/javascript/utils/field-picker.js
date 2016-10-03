@@ -70,7 +70,7 @@ Ext.define('CA.technicalservices.FieldPicker', {
             this.callParent(arguments);
         },
         getFields: function(){
-            return this._fields;
+            return this._fields || this.alwaysSelectedValues;
         },
         _getPickerConfig: function() {
             var pickerConfig;
