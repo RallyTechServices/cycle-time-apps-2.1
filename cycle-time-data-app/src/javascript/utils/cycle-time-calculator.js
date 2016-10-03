@@ -94,7 +94,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
         }
 
-        return { cycleTime: cycleTime, endDate: endDate, startDate: startDate };
+        return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
     },
     getGranularityMultiplier: function(granularity){
         granularity = granularity.toLowerCase();
@@ -133,7 +133,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getFirstStartDate: function(timeInStateData, stateName, stateValue){
 
-
         var timeData = timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
@@ -145,23 +144,23 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         return null;
     },
     getLastEndDate: function(timeInStateData, stateName, stateValue){
-        console.log('getLastEndDate', stateName, stateValue)
+       //console.log('getLastEndDate', stateName, stateValue)
         var timeData = timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
         }
-        console.log('getLastEndDate', timeData)
+       //console.log('getLastEndDate', timeData)
         if (timeData && timeData.length > 0){
             return timeData[timeData.length-1] && timeData[timeData.length-1][0] || null ;
         }
         return null;
     },
-    getExportTimestampCSV: function(records){
+    getExportTimestampCSV: function(records, exportDateFormat){
         var headers = ['FormattedID','State','StateValue','StartDate','EndDate'],
             csv = [headers.join(',')],
             getTimeSpanRow = function(timeSpan, formattedID, stateName, stateValue){
-                var startDate = timeSpan.length > 0 && timeSpan[0] && Rally.util.DateTime.format(timeSpan[0],'Y-m-d h:i:s a') || "",
-                    endDate = timeSpan.length > 1 && timeSpan[1] && Rally.util.DateTime.format(timeSpan[1],'Y-m-d h:i:s a') || "",
+                var startDate = timeSpan.length > 0 && timeSpan[0] && Rally.util.DateTime.format(timeSpan[0],exportDateFormat) || "",
+                    endDate = timeSpan.length > 1 && timeSpan[1] && Rally.util.DateTime.format(timeSpan[1],exportDateFormat) || "",
                     row = [formattedID, stateName, stateValue, startDate, endDate];
                 return row.join(",");
             };

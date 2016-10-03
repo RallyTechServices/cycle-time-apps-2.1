@@ -2,6 +2,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
 
     MAX_CHUNK_SIZE: 50,
+    USE_POST: false,
 
     constructor: function(config){
         this.modelNames = config.modelNames;
@@ -11,6 +12,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         this.stateValues = config.stateValues || [];
         this.fromState = config.fromState;
         this.toState = config.toState;
+        this.startDate = config.startDate || null;
+        this.endDate = config.endDate || null;
     },
 
     load: function(records){
@@ -54,6 +57,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return snapsByOid;
     },
     _updateRecords: function(resultsByOid, records){
+        var updatedRecords = [];
         Ext.Array.each(records, function(r){
             var oid = r.get('ObjectID'),
                 snapshots = resultsByOid[oid];
@@ -61,11 +65,25 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             var cycleTimeData = this._mungeCycleTimeData(snapshots);
             var timeInStateData = this._mungeTimeInStateData(snapshots);
 
-            r.set("cycleTimeData",cycleTimeData);
-            r.set("timeInStateData", timeInStateData);
+            if (this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
+                r.set("cycleTimeData",cycleTimeData);
+                r.set("timeInStateData", timeInStateData);
+                updatedRecords.push(r);
+            }
 
         }, this);
-        return records;
+        return updatedRecords;
+    },
+    _isCycleInDateRange: function(cycleTimeData, startDate, endDate){
+    //    console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
+        if (startDate && cycleTimeData.endDate < startDate){
+            return false;
+        }
+        if (endDate && cycleTimeData.endDate > endDate){
+            return false;
+        }
+        return true;
+
     },
     _mungeCycleTimeData: function(snapshots){
         if (!snapshots || snapshots.length === 0){
@@ -108,6 +126,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     value: objectIDs
                 }
             ],
+            useHttpPost: this.USE_POST,
             sorters: [{
                 property: 'ObjectID',
                 direction: 'ASC'

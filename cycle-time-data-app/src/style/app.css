@@ -22,3 +22,11 @@
 .rly-right {
     width: 25%;
 }
+.warning {
+    color:darkred;
+}
+.help-button {
+    color:silver;
+    background-color:white;
+    font-size:14px;
+}
