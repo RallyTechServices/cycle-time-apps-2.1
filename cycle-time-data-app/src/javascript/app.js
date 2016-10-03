@@ -52,7 +52,7 @@
         this.getSelectorBox().removeAll();
         this.getCycleTimeBox().removeAll();
         this.getFilterBox().removeAll();
-        this.updateMessageBox(this.instructions);
+        this.getMessageBox().update({message: this.instructions});
 
         var fp = this.getSelectorBox().add({
             xtype: 'fieldpickerbutton',
@@ -69,19 +69,26 @@
             context: this.getContext(),
             margin: '3 9 0 0',
             stateful: true,
-            stateId: 'grid-filters-1'
+            stateId: 'grid-filters-1',
+            listeners: {
+                inlinefilterready: this.addInlineFilterPanel,
+                inlinefilterchange: this.updateGridFilters,
+                scope: this
+            }
         });
-        filter.on('inlinefilterready', this.addInlineFilterPanel, this);
-        filter.on('inlinefilterchange', this.updateGridFilters, this);
+
 
         var ctButton = this.getSelectorBox().add({
             xtype: 'cycletimepickerbutton',
             modelNames: this.getModelNames(),
             context: this.getContext(),
-            margin: '3 9 0 0'
+            margin: '3 9 0 0',
+            listeners: {
+                cycletimepickerready: this.addCycleTimePanel,
+                scope: this,
+                cycletimeparametersupdated: this.updateCycleTimeParameters
+            }
         });
-        ctButton.on('cycletimepickerready', this.addCycleTimePanel, this)
-        ctButton.on('cycletimeparametersupdated', this.updateCycleTimeParameters, this);
 
         this.getSelectorBoxRight().removeAll();
 
@@ -201,6 +208,7 @@
         this.getFilterBox().add(panel);
     },
     addCycleTimePanel: function(panel){
+        this.logger.log('addCycleTimePanel', panel);
         this.getCycleTimeBox().add(panel);
     },
     updateGridFields: function(fields){
@@ -209,12 +217,17 @@
         this.updateGrid();
     },
      setUpdateButtonUpdateable: function(updateable){
+         var button = this.down('#btUpdate');
+         if (!button){
+             return;
+         }
+
          if (updateable){
-             this.down('#btUpdate').setDisabled(false);
-             this.down('#btUpdate').setIconCls('icon-refresh');
+             button.setDisabled(false);
+             button.setIconCls('icon-refresh');
          } else {
-             this.down('#btUpdate').setDisabled(true);
-             this.down('#btUpdate').setIconCls('');
+             button.setDisabled(true);
+             button.setIconCls('');
          }
      },
     updateGridFilters: function(filter){
@@ -314,7 +327,7 @@
                      var count =  operation && operation.resultSet && operation.resultSet.total;
                      this.logger.log('count', count, this.getExportLimit());
                      if (count > this.getExportLimit()){
-                         this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} were loaded for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
+                         this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} can be fetched for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
                         deferred.resolve(null);
                      } else {
                          this.updateMessageBox(Ext.String.format('{0} current records found.', count));
@@ -630,12 +643,20 @@
 
         var store = grid.getStore();
 
+        this.getMessageBox().setLoading("Preparing Export File(s)...");
         store.load({
             pageSize: totalCount,
             limit: totalCount,
             callback: function(records, operation){
-                var columns = this.getColumnCfgs(records && records[0]);
-                this.saveExportFiles(records, columns, includeTimestamps, includeSummary);
+                this.getMessageBox().setLoading(false);
+                if (operation.wasSuccessful()){
+                    var columns = this.getColumnCfgs(records && records[0]);
+                    this.saveExportFiles(records, columns, includeTimestamps, includeSummary);
+                } else {
+                    this.logger.log('Error preparing export data', operation);
+                    Rally.ui.notify.Notifier.showError('Error preparing export data:  ' + operation && operation.error && operation.error.errors.join(','));
+                }
+
             },
             scope: this
         });
@@ -768,12 +789,12 @@
     },
     getModelNames: function(){
         var modelNames = this.getSetting('includeTypes');
-        this.logger.log('getModelNames', modelNames);
 
         if (Ext.isString(modelNames)){
             modelNames = modelNames.split(',');
             return modelNames;
         }
+        this.logger.log('getModelNames', modelNames);
         return modelNames || [];
     },
     getSelectorBox: function(){

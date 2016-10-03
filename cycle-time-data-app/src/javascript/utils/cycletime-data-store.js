@@ -1,8 +1,8 @@
 Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
 
-    MAX_CHUNK_SIZE: 50,
-    USE_POST: false,
+    MAX_CHUNK_SIZE: 250,
+    USE_POST: true,
 
     constructor: function(config){
         this.modelNames = config.modelNames;

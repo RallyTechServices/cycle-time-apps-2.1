@@ -21,7 +21,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     initComponent: function() {
         this.callParent(arguments);
-
+        console.log('initComponent')
         if (!this.stateful) {
             this.applyState({});
         }
@@ -40,7 +40,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 success: function(models){
                     this.models = models;
                     this._addItems(state);
-
                 },
                 scope: this
             });
@@ -228,11 +227,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     },
 
     applyState: function(state){
-
+        console.log('applyState', state);
         if (state && state.cycleStates && !Ext.isArray(state.cycleStates)){
             state.cycleStates = state.cycleStates.split(',');
         }
-        console.log('applyState', state);
         this._loadModels(state);
     },
     _updateToState: function(cbFrom){
@@ -260,8 +258,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     },
     hasValidCycleTimeParameters: function(){
 
-        var fromState = this.down('#cb-fromState').getValue(),
-            toState = this.down('#cb-toState').getValue();
+        var fromState = this.down('#cb-fromState') && this.down('#cb-fromState').getValue(),
+            toState = this.down('#cb-toState') && this.down('#cb-toState').getValue();
 
         if(!fromState || !toState){
             return false;
@@ -269,14 +267,14 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         return true;
     },
     getCycleTimeParameters: function(){
-        var cycleTimeField = this.down('#cb-StateField').getValue(),
-            cycleStartState = this.down('#cb-fromState').getValue(),
-            cycleEndState = this.down('#cb-toState').getValue(),
-            showReady = this.down('#btReady').pressed,
-            showBlocked = this.down('#btBlocked').pressed,
-            cycleEndRangeStart = this.down('#dtFrom').getValue() || null,
-            cycleEndRangeTo = this.down('#dtTo').getValue() || null,
-            states = this.down('#cb-fromState').getStore().getRange();
+        var cycleTimeField = this._getStateFieldCombo() && this._getStateFieldCombo().getValue() || null,
+            cycleStartState = this._getFromStateCombo() && this._getFromStateCombo().getValue() || null,
+            cycleEndState = this._getToStateCombo() && this._getToStateCombo().getValue() || null,
+            showReady = this.down('#btReady') && this.down('#btReady').pressed || false,
+            showBlocked = this.down('#btBlocked') && this.down('#btBlocked').pressed || false,
+            cycleEndRangeStart = this.down('#dtFrom') && this.down('#dtFrom').getValue() || null,
+            cycleEndRangeTo = this.down('#dtTo') && this.down('#dtTo').getValue() || null,
+            states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
 
         states = Ext.Array.map(states, function(r) {
             if (r.get('value') !== CArABU.technicalservices.CycleTimeCalculator.creationDateText) {

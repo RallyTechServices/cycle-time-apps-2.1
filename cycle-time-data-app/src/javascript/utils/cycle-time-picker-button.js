@@ -5,7 +5,9 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     cls: 'secondary rly-small',
     iconCls: 'icon-history',
 
-    stateEvents: ['expand', 'collapse', 'filterchange'],
+    stateful: true,
+    stateId: 'cycleTimePanel',
+    stateEvents: ['expand', 'collapse', 'parametersupdated'],
     text: '',
 
     config: {
@@ -14,7 +16,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         toolTipConfig: {
             anchor: 'top',
             mouseOffset: [-9, -2]
-        },
+        }
     },
 
     initComponent: function() {
@@ -28,8 +30,14 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         this.on('parametersupdated', this._onPanelChange, this, { buffer: 500 });
         this.on('collapse', this._onCollapse, this);
     },
+    _hasState: function(){
+        if (this.stateful && this.stateId) {
+            return !!Ext.state.Manager.get(this.stateId);
+        }
+        return false;
+    },
     _onPanelChange: function(params){
-        console.log('_onPanelChange', params);
+
         Ext.suspendLayouts();
         if (this.hasValidCycleTimeParameters()) {
             this.setText('Active Cycle Time Data');
@@ -61,6 +69,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         }
     },
     applyState: function(state) {
+        //console.log('applyState', state);
         this._build(state);
     },
 
@@ -92,7 +101,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     },
 
     _loadModels: function() {
-
+        console.log('_loadModels', this.modelNames);
         if (this.models) {
             return Deft.Promise.when(this.models);
         } else {
@@ -110,7 +119,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     _applyParameters: function(params){
 
 
-       console.log('_applyParameters', params);
+      // console.log('_applyParameters', params);
 
     },
     _indicateActiveFilterPresent: function() {
@@ -126,14 +135,15 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         }
     },
     _createCycleTimePanel: function() {
-
+        console.log('_createCycleTimePanel');
         this.cycleTimePanel = Ext.widget({
             xtype: 'cycletimepickerpanel',
-            modelNames: this.getModelNames(),
+            modelNames: this.modelNames,
             models: this.models,
             context: this.context,
             flex: 1
         });
+        console.log('_createCycleTimePanel', this.cycleTimePanel);
 
         this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
         this.fireEvent('cycletimepickerready', this.cycleTimePanel);
