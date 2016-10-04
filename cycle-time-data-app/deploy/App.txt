@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sun Oct 02 2016 19:21:52 GMT-0600 (MDT) -->
+    <!--  Build Date: Tue Oct 04 2016 14:05:12 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Oct 02 2016 19:21:52 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Tue Oct 04 2016 14:05:12 GMT-0600 (MDT)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 171840418720;
+        var CHECKSUM = 172919332032;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -756,7 +756,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     initComponent: function() {
         this.callParent(arguments);
-        console.log('initComponent')
+       
         if (!this.stateful) {
             this.applyState({});
         }
@@ -971,6 +971,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateToState: function(cbFrom){
 
         var toStateCombo = this.down('#cb-toState');
+
         toStateCombo && toStateCombo.setDisabled(true);
 
         if (!cbFrom || !cbFrom.getValue() || !cbFrom.getRecord() || !toStateCombo){
@@ -1093,6 +1094,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         var model = cb.model;
 
         fromStateCombo.setDisabled(false);
+        toStateCombo.setDisabled(false);
 
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
@@ -2076,11 +2078,20 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('getWsapiArtifactFilters', filters);
         if (this.calculateCycleTime() && this.getShowOnlyCompletedCycles()){  //show only data that is in a completed cycle state
 
-            var cycleFilters = Ext.create('Rally.data.wsapi.Filter',{
-                property: this.getStateField(),
-                operator: '>=',
-                value: this.getToStateValue()
+            var states = this.getCycleStates(),
+                cycleFilters = [],
+                stateFieldName = this.getStateField(),
+                toStateValue = this.getToStateValue();
+
+            Ext.Array.each(states, function(s){
+                if (s === toStateValue || cycleFilters.length > 0){
+                    cycleFilters.push({
+                        property: stateFieldName,
+                        value: s
+                    });
+                }
             });
+            cycleFilters = Rally.data.wsapi.Filter.or(cycleFilters);
 
             if (filters){
                 filters = filters.and(cycleFilters);

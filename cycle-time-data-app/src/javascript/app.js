@@ -356,11 +356,20 @@
         this.logger.log('getWsapiArtifactFilters', filters);
         if (this.calculateCycleTime() && this.getShowOnlyCompletedCycles()){  //show only data that is in a completed cycle state
 
-            var cycleFilters = Ext.create('Rally.data.wsapi.Filter',{
-                property: this.getStateField(),
-                operator: '>=',
-                value: this.getToStateValue()
+            var states = this.getCycleStates(),
+                cycleFilters = [],
+                stateFieldName = this.getStateField(),
+                toStateValue = this.getToStateValue();
+
+            Ext.Array.each(states, function(s){
+                if (s === toStateValue || cycleFilters.length > 0){
+                    cycleFilters.push({
+                        property: stateFieldName,
+                        value: s
+                    });
+                }
             });
+            cycleFilters = Rally.data.wsapi.Filter.or(cycleFilters);
 
             if (filters){
                 filters = filters.and(cycleFilters);

@@ -21,7 +21,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     initComponent: function() {
         this.callParent(arguments);
-        console.log('initComponent')
+       
         if (!this.stateful) {
             this.applyState({});
         }
@@ -236,6 +236,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateToState: function(cbFrom){
 
         var toStateCombo = this.down('#cb-toState');
+
         toStateCombo && toStateCombo.setDisabled(true);
 
         if (!cbFrom || !cbFrom.getValue() || !cbFrom.getRecord() || !toStateCombo){
@@ -358,6 +359,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         var model = cb.model;
 
         fromStateCombo.setDisabled(false);
+        toStateCombo.setDisabled(false);
 
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
