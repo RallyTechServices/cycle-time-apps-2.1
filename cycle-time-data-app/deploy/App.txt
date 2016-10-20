@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Oct 04 2016 14:05:12 GMT-0600 (MDT) -->
+    <!--  Build Date: Thu Oct 20 2016 15:44:05 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Oct 04 2016 14:05:12 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Thu Oct 20 2016 15:44:05 GMT-0600 (MDT)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 172919332032;
+        var CHECKSUM = 177553509602;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -479,7 +479,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     },
 
     clearAllFilters: function() {
-        this.cycleTimePanel.clear();
+        this.cycleTimePanel && this.cycleTimePanel.clear();
     },
 
     _build: function(applyParameters) {
@@ -498,7 +498,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     },
 
     _loadModels: function() {
-        console.log('_loadModels', this.modelNames);
+
         if (this.models) {
             return Deft.Promise.when(this.models);
         } else {
@@ -532,30 +532,29 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         }
     },
     _createCycleTimePanel: function() {
-        console.log('_createCycleTimePanel');
-        this.cycleTimePanel = Ext.widget({
-            xtype: 'cycletimepickerpanel',
-            modelNames: this.modelNames,
-            models: this.models,
-            context: this.context,
-            flex: 1
-        });
-        console.log('_createCycleTimePanel', this.cycleTimePanel);
 
-        this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
-        this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        if (!this.cycleTimePanel){
+            this.cycleTimePanel = Ext.widget({
+                xtype: 'cycletimepickerpanel',
+                modelNames: this.modelNames,
+                models: this.models,
+                context: this.context,
+                flex: 1
+            });
+            this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
+            this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        }
     },
-
     _togglePanel: function() {
-        this.cycleTimePanel.toggleCollapse();
+        this.cycleTimePanel && this.cycleTimePanel.toggleCollapse();
     },
 
-    _onCollapse: function() {
-        console.log('_onCollapse validate here?');
-    },
+    //_onCollapse: function() {
+    //    console.log('_onCollapse validate here?');
+    //},
 
     collapse: function() {
-        this.cycleTimePanel.collapse();
+        this.cycleTimePanel && this.cycleTimePanel.collapse();
     },
 
     _onBeforeShowToolTip: function() {
@@ -566,8 +565,8 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
 
-    MAX_CHUNK_SIZE: 250,
-    USE_POST: true,
+    MAX_CHUNK_SIZE: 40,
+    USE_POST: false,
 
     constructor: function(config){
         this.modelNames = config.modelNames;
@@ -756,11 +755,17 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     initComponent: function() {
         this.callParent(arguments);
-       
-        if (!this.stateful) {
+
+        if (!this.stateful || (this.stateful && !this._hasState())) {
             this.applyState({});
         }
 
+    },
+    _hasState: function(){
+        if (this.stateful && this.stateId) {
+            return !!Ext.state.Manager.get(this.stateId);
+        }
+        return false;
     },
     _loadModels: function(state){
         if (this.models){
@@ -784,6 +789,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         if (!state){
             state = {};
         }
+
+        this.removeAll();
 
         this.add({
             xtype: 'rallybutton',
@@ -962,7 +969,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     },
 
     applyState: function(state){
-        console.log('applyState', state);
         if (state && state.cycleStates && !Ext.isArray(state.cycleStates)){
             state.cycleStates = state.cycleStates.split(',');
         }
@@ -1013,11 +1019,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
 
         states = Ext.Array.map(states, function(r) {
-            if (r.get('value') !== CArABU.technicalservices.CycleTimeCalculator.creationDateText) {
+            //if (r.get('value') !== CArABU.technicalservices.CycleTimeCalculator.creationDateText) {
                 return r.get('value');
-            }
-            return null;
         });
+        states = _.uniq(states);
         return {
             cycleStateField: cycleTimeField,
             cycleStartState: cycleStartState,
@@ -1093,9 +1098,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         var model = cb.model;
 
-        fromStateCombo.setDisabled(false);
-        toStateCombo.setDisabled(false);
-
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
             data.push({value: CArABU.technicalservices.CycleTimeCalculator.creationDateText });
@@ -1109,10 +1111,13 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     data: data
                 });
                 fromStateCombo.bindStore(store);
+                fromStateCombo.setDisabled(false);
                 if (fromStatePreviousValue){
                     fromStateCombo.setValue(fromStatePreviousValue);
                 }
+
                 toStateCombo.bindStore(store);
+                toStateCombo.setDisabled(false);
                 if (toStatePreviousValue){
                     toStateCombo.setValue(toStatePreviousValue);
                 }
@@ -1524,32 +1529,66 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
             includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
+        var filters = [{
+            property: 'TypePath',
+            operator: 'contains',
+            value: 'PortfolioItem/'
+        },{
+            property: 'TypePath',
+            value: 'Defect'
+        },{
+            property: 'TypePath',
+            value: 'HierarchicalRequirement'
+        }];
+        filters = Rally.data.wsapi.Filter.or(filters);
 
 
         return [{
-            xtype: 'checkboxgroup',
-            fieldLabel: 'Include Types',
-            columns: 1,
-            vertical: true,
+            xtype: 'rallycombobox',
+            name: 'artifactType',
+            storeConfig: {
+                model: 'TypeDefinition',
+                filters: filters,
+                fetch: ['TypePath','DisplayName'],
+                remoteFilter: true
+            },
+            fieldLabel: 'Artifact Type',
             allowBlank: false,
             labelAlign: 'right',
             labelWidth: 100,
-            msgTarget: 'under',
-            validateOnChange: true,
-            validator: function(value) {
-                if (!value || value.length ===0){
-                    return "At least 1 artifact type must be selected";
-                }
-            },
-            margin: '0 0 50 0',
-                items: [
-                    { boxLabel: 'User Story', name: 'includeTypes', inputValue: 'HierarchicalRequirement', checked: includeUS },
-                    { boxLabel: 'Defect', name: 'includeTypes', inputValue: 'Defect', checked: includeDefect }
-                ]
+            valueField: 'TypePath',
+            displayField: 'DisplayName'
+            //msgTarget: 'under',
+            //validateOnChange: true,
+            //items: items,
+            //validator: function(value) {
+            //    if (!value || value.length ===0){
+            //        return "At least 1 artifact type must be selected";
+            //    }
+            //},
+            //margin: '0 0 50 0'
+            //xtype: 'checkboxgroup',
+            //fieldLabel: 'Include Types',
+            //columns: 1,
+            //vertical: true,
+            //allowBlank: false,
+            //labelAlign: 'right',
+            //labelWidth: 100,
+            //msgTarget: 'under',
+            //validateOnChange: true,
+            //items: items,
+            //validator: function(value) {
+            //    if (!value || value.length ===0){
+            //        return "At least 1 artifact type must be selected";
+            //    }
+            //},
+            //margin: '0 0 50 0'
         },{
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
             name: 'exportLimit',
+            labelAlign: 'right',
+            labelWidth: 100,
             minValue: 10,
             maxValue: 10000
         },{
@@ -1598,8 +1637,11 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
 
             getCycleTime: function(values){
 
-                var cycleTime = values && values.cycleTime || null;
-                return cycleTime || '--';
+                var cycleTime = values && values.cycleTime ;
+                if (cycleTime >= 0){
+                    return cycleTime;
+                }
+                return '--';
             },
             getTooltip: function(values){
 
@@ -1749,7 +1791,8 @@ Ext.define('CA.technicalservices.Utility',{
 
     config: {
         defaultSettings: {
-            includeTypes:  ['HierarchicalRequirement','Defect'],
+          //  includeTypes:  ['HierarchicalRequirement','Defect'],
+            artifactType: 'HierarchicalRequirement',
             queryFilter: "",
             granularity: 'day',
             precision: 2,
@@ -2030,7 +2073,7 @@ Ext.define('CA.technicalservices.Utility',{
              columnCfgs: this.getColumnCfgs(records[0]),
              showPagingToolbar: true,
              scroll: 'vertical',
-             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the currently selected WSAPI and cycle time filters and project scope.</div></div>'
+             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
          });
          this.resumeLayouts(true);
      },
@@ -2083,7 +2126,13 @@ Ext.define('CA.technicalservices.Utility',{
                 stateFieldName = this.getStateField(),
                 toStateValue = this.getToStateValue();
 
+            var re = new RegExp("PortfolioItem\/","i");
+            if (re.test(this.getModelNames()[0]) && stateFieldName === 'State'){
+                stateFieldName = "State.Name";
+            }
+
             Ext.Array.each(states, function(s){
+               // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
                     cycleFilters.push({
                         property: stateFieldName,
@@ -2308,10 +2357,11 @@ Ext.define('CA.technicalservices.Utility',{
 
         if (fromState && toState){
             Ext.Array.each( this.getCycleStates(), function(s){
+
                 var header = this.getTimeInStateColumnHeader(s);
-                if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                }
+                //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                //}
                 columns.push({
                     xtype: 'timetemplatecolumn',
                     dataType: 'timeInStateData',
@@ -2433,11 +2483,11 @@ Ext.define('CA.technicalservices.Utility',{
         }
 
         Ext.Array.each(states, function(state){
-            if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
-            } else {
+            //if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+            //    headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
+            //} else {
                 headers.push(this.getTimeInStateColumnHeader(state));
-            }
+            //}
 
         }, this);
 
@@ -2460,11 +2510,12 @@ Ext.define('CA.technicalservices.Utility',{
 
             row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
 
-            var startDate = CArABU.technicalservices.CycleTimeCalculator.getFirstStartDate(timeInStateData,stateField, this.getFromStateValue()),
-                endDate = CArABU.technicalservices.CycleTimeCalculator.getLastEndDate(timeInStateData,stateField, this.getToStateValue());
+            var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
+                endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
 
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
+
             row.push(formattedStart);
             row.push(formattedEnd);
 
@@ -2519,14 +2570,14 @@ Ext.define('CA.technicalservices.Utility',{
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('includeTypes');
+        var modelNames = this.getSetting('artifactType'); //includeTypes');
 
-        if (Ext.isString(modelNames)){
-            modelNames = modelNames.split(',');
-            return modelNames;
-        }
+        //if (Ext.isString(modelNames)){
+        //    modelNames = modelNames.split(',');
+        //    return modelNames;
+        //}
         this.logger.log('getModelNames', modelNames);
-        return modelNames || [];
+        return [modelNames] || [];
     },
     getSelectorBox: function(){
         return this.down('#selector_box');

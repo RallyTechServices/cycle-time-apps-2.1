@@ -13,8 +13,11 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
 
             getCycleTime: function(values){
 
-                var cycleTime = values && values.cycleTime || null;
-                return cycleTime || '--';
+                var cycleTime = values && values.cycleTime ;
+                if (cycleTime >= 0){
+                    return cycleTime;
+                }
+                return '--';
             },
             getTooltip: function(values){
 
