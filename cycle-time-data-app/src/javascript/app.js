@@ -27,7 +27,8 @@
 
     config: {
         defaultSettings: {
-            includeTypes:  ['HierarchicalRequirement','Defect'],
+          //  includeTypes:  ['HierarchicalRequirement','Defect'],
+            artifactType: 'HierarchicalRequirement',
             queryFilter: "",
             granularity: 'day',
             precision: 2,
@@ -308,7 +309,7 @@
              columnCfgs: this.getColumnCfgs(records[0]),
              showPagingToolbar: true,
              scroll: 'vertical',
-             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the currently selected WSAPI and cycle time filters and project scope.</div></div>'
+             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
          });
          this.resumeLayouts(true);
      },
@@ -361,7 +362,13 @@
                 stateFieldName = this.getStateField(),
                 toStateValue = this.getToStateValue();
 
+            var re = new RegExp("PortfolioItem\/","i");
+            if (re.test(this.getModelNames()[0]) && stateFieldName === 'State'){
+                stateFieldName = "State.Name";
+            }
+
             Ext.Array.each(states, function(s){
+               // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
                     cycleFilters.push({
                         property: stateFieldName,
@@ -586,10 +593,11 @@
 
         if (fromState && toState){
             Ext.Array.each( this.getCycleStates(), function(s){
+
                 var header = this.getTimeInStateColumnHeader(s);
-                if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                }
+                //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                //}
                 columns.push({
                     xtype: 'timetemplatecolumn',
                     dataType: 'timeInStateData',
@@ -711,11 +719,11 @@
         }
 
         Ext.Array.each(states, function(state){
-            if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
-            } else {
+            //if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+            //    headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
+            //} else {
                 headers.push(this.getTimeInStateColumnHeader(state));
-            }
+            //}
 
         }, this);
 
@@ -738,11 +746,12 @@
 
             row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
 
-            var startDate = CArABU.technicalservices.CycleTimeCalculator.getFirstStartDate(timeInStateData,stateField, this.getFromStateValue()),
-                endDate = CArABU.technicalservices.CycleTimeCalculator.getLastEndDate(timeInStateData,stateField, this.getToStateValue());
+            var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
+                endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
 
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
+
             row.push(formattedStart);
             row.push(formattedEnd);
 
@@ -797,14 +806,14 @@
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('includeTypes');
+        var modelNames = this.getSetting('artifactType'); //includeTypes');
 
-        if (Ext.isString(modelNames)){
-            modelNames = modelNames.split(',');
-            return modelNames;
-        }
+        //if (Ext.isString(modelNames)){
+        //    modelNames = modelNames.split(',');
+        //    return modelNames;
+        //}
         this.logger.log('getModelNames', modelNames);
-        return modelNames || [];
+        return [modelNames] || [];
     },
     getSelectorBox: function(){
         return this.down('#selector_box');

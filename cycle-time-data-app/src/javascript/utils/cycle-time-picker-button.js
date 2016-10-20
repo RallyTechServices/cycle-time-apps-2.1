@@ -82,7 +82,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     },
 
     clearAllFilters: function() {
-        this.cycleTimePanel.clear();
+        this.cycleTimePanel && this.cycleTimePanel.clear();
     },
 
     _build: function(applyParameters) {
@@ -101,7 +101,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     },
 
     _loadModels: function() {
-        console.log('_loadModels', this.modelNames);
+
         if (this.models) {
             return Deft.Promise.when(this.models);
         } else {
@@ -135,30 +135,29 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         }
     },
     _createCycleTimePanel: function() {
-        console.log('_createCycleTimePanel');
-        this.cycleTimePanel = Ext.widget({
-            xtype: 'cycletimepickerpanel',
-            modelNames: this.modelNames,
-            models: this.models,
-            context: this.context,
-            flex: 1
-        });
-        console.log('_createCycleTimePanel', this.cycleTimePanel);
 
-        this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
-        this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        if (!this.cycleTimePanel){
+            this.cycleTimePanel = Ext.widget({
+                xtype: 'cycletimepickerpanel',
+                modelNames: this.modelNames,
+                models: this.models,
+                context: this.context,
+                flex: 1
+            });
+            this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
+            this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        }
     },
-
     _togglePanel: function() {
-        this.cycleTimePanel.toggleCollapse();
+        this.cycleTimePanel && this.cycleTimePanel.toggleCollapse();
     },
 
-    _onCollapse: function() {
-        console.log('_onCollapse validate here?');
-    },
+    //_onCollapse: function() {
+    //    console.log('_onCollapse validate here?');
+    //},
 
     collapse: function() {
-        this.cycleTimePanel.collapse();
+        this.cycleTimePanel && this.cycleTimePanel.collapse();
     },
 
     _onBeforeShowToolTip: function() {
