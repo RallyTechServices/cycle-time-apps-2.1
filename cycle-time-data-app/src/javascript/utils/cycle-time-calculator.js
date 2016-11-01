@@ -71,17 +71,15 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                     stateIdx = -1;
                 }
             }
-            if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1){
+            if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1 && startDate === null){
                 startDate = thisDate;
             }
             if (stateIdx >= endIdx && previousStateIdx < endIdx){
                 endDate = thisDate;
-
                 if (startDate != null){
                     cycleTime = Rally.util.DateTime.getDifference(endDate,startDate,'second');
                 }
             }
-
         }, this);
 
 
