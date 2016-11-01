@@ -35,7 +35,7 @@
             exportLimit: 1000
         }
     },
-    exportDateFormat: 'm/d/Y h:s',
+    exportDateFormat: 'm/d/Y h:i:s',
     _gridConfig: {},
 
     launch: function() {
@@ -748,7 +748,7 @@
 
             var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
                 endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-
+        
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
 

@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Oct 31 2016 19:32:18 GMT-0600 (MDT) -->
+    <!--  Build Date: Tue Nov 01 2016 11:44:20 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Oct 31 2016 19:32:18 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Tue Nov 01 2016 11:44:20 GMT-0600 (MDT)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 177658067273;
+        var CHECKSUM = 177668593815;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1797,7 +1797,7 @@ Ext.define('CA.technicalservices.Utility',{
             exportLimit: 1000
         }
     },
-    exportDateFormat: 'm/d/Y h:s',
+    exportDateFormat: 'm/d/Y h:i:s',
     _gridConfig: {},
 
     launch: function() {
@@ -2510,7 +2510,7 @@ Ext.define('CA.technicalservices.Utility',{
 
             var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
                 endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-
+        
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
 
