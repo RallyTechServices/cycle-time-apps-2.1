@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Thu Oct 20 2016 15:44:05 GMT-0600 (MDT) -->
+    <!--  Build Date: Mon Oct 31 2016 19:32:18 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Thu Oct 20 2016 15:44:05 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Mon Oct 31 2016 19:32:18 GMT-0600 (MDT)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 177553509602;
+        var CHECKSUM = 177658067273;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -276,17 +276,15 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                     stateIdx = -1;
                 }
             }
-            if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1){
+            if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1 && startDate === null){
                 startDate = thisDate;
             }
             if (stateIdx >= endIdx && previousStateIdx < endIdx){
                 endDate = thisDate;
-
                 if (startDate != null){
                     cycleTime = Rally.util.DateTime.getDifference(endDate,startDate,'second');
                 }
             }
-
         }, this);
 
 
