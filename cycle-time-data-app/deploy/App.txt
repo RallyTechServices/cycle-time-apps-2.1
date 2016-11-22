@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Nov 01 2016 11:44:20 GMT-0600 (MDT) -->
+    <!--  Build Date: Mon Nov 21 2016 22:05:28 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Nov 01 2016 11:44:20 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Mon Nov 21 2016 22:05:28 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 177668593815;
+        var CHECKSUM = 180309912112;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -323,7 +323,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
 
-            var timeData = timeInStateData[stateName];
+            var timeData = timeInStateData && timeInStateData[stateName];
             if (timeData && stateValue){
                 timeData = timeData[stateValue];
             }
@@ -336,7 +336,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getFirstStartDate: function(timeInStateData, stateName, stateValue){
 
-        var timeData = timeInStateData[stateName];
+        var timeData = timeInStateData && timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
         }
@@ -348,7 +348,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getLastEndDate: function(timeInStateData, stateName, stateValue){
        //console.log('getLastEndDate', stateName, stateValue)
-        var timeData = timeInStateData[stateName];
+        var timeData = timeInStateData && timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
         }
@@ -1454,8 +1454,6 @@ Ext.apply(Ext.data.SortTypes, {
     }
 });
 
-
-
 Ext.override(Rally.ui.grid.TreeGrid, {
     _mergeColumnConfigs: function(newColumns, oldColumns) {
 
@@ -1833,6 +1831,20 @@ Ext.define('CA.technicalservices.Utility',{
             margin: '3 9 0 0',
             stateful: true,
             stateId: 'grid-filters-1',
+            inlineFilterPanelConfig: {
+                quickFilterPanelConfig: {
+                    addQuickFilterConfig: {
+                        whiteListFields: ['Milestones', 'Tags']
+                    }
+                },
+                advancedFilterPanelConfig: {
+                    advancedFilterRowsConfig: {
+                        propertyFieldConfig: {
+                            whiteListFields: ['Milestones', 'Tags']
+                        }
+                    }
+                }
+            },
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: this.updateGridFilters,
@@ -2499,7 +2511,15 @@ Ext.define('CA.technicalservices.Utility',{
             for (var j = 0; j < fetchList.length; j++){
                 var val = record.get(fetchList[j]);
                 if (Ext.isObject(val)){
-                    val = val._refObjectName;
+                    if (val._tagsNameArray){
+                        var newVal = [];
+                        Ext.Array.each(val._tagsNameArray, function(t){
+                            newVal.push(t.Name);
+                        });
+                        val = newVal.join(',');
+                    } else {
+                        val = val._refObjectName;
+                    }
                 }
                 row.push(val || "");
             }
@@ -2510,7 +2530,7 @@ Ext.define('CA.technicalservices.Utility',{
 
             var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
                 endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-        
+
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
 
@@ -2525,7 +2545,11 @@ Ext.define('CA.technicalservices.Utility',{
             }
 
             for (var s = 0; s < states.length; s++){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                if (timeInStateData){
+                    row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                } else {
+                    row.push("");
+                }
             }
 
             row = _.map(row, function(v){ return Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));});

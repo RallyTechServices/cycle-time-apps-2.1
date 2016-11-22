@@ -71,6 +71,20 @@
             margin: '3 9 0 0',
             stateful: true,
             stateId: 'grid-filters-1',
+            inlineFilterPanelConfig: {
+                quickFilterPanelConfig: {
+                    addQuickFilterConfig: {
+                        whiteListFields: ['Milestones', 'Tags']
+                    }
+                },
+                advancedFilterPanelConfig: {
+                    advancedFilterRowsConfig: {
+                        propertyFieldConfig: {
+                            whiteListFields: ['Milestones', 'Tags']
+                        }
+                    }
+                }
+            },
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: this.updateGridFilters,
@@ -737,7 +751,15 @@
             for (var j = 0; j < fetchList.length; j++){
                 var val = record.get(fetchList[j]);
                 if (Ext.isObject(val)){
-                    val = val._refObjectName;
+                    if (val._tagsNameArray){
+                        var newVal = [];
+                        Ext.Array.each(val._tagsNameArray, function(t){
+                            newVal.push(t.Name);
+                        });
+                        val = newVal.join(',');
+                    } else {
+                        val = val._refObjectName;
+                    }
                 }
                 row.push(val || "");
             }
@@ -748,7 +770,7 @@
 
             var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
                 endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-        
+
             var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
                 formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
 
@@ -763,7 +785,11 @@
             }
 
             for (var s = 0; s < states.length; s++){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                if (timeInStateData){
+                    row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                } else {
+                    row.push("");
+                }
             }
 
             row = _.map(row, function(v){ return Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));});

@@ -118,7 +118,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
 
-            var timeData = timeInStateData[stateName];
+            var timeData = timeInStateData && timeInStateData[stateName];
             if (timeData && stateValue){
                 timeData = timeData[stateValue];
             }
@@ -131,7 +131,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getFirstStartDate: function(timeInStateData, stateName, stateValue){
 
-        var timeData = timeInStateData[stateName];
+        var timeData = timeInStateData && timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
         }
@@ -143,7 +143,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     },
     getLastEndDate: function(timeInStateData, stateName, stateValue){
        //console.log('getLastEndDate', stateName, stateValue)
-        var timeData = timeInStateData[stateName];
+        var timeData = timeInStateData && timeInStateData[stateName];
         if (timeData && stateValue){
             timeData = timeData[stateValue];
         }
