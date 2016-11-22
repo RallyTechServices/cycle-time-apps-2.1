@@ -35,8 +35,6 @@ Ext.apply(Ext.data.SortTypes, {
     }
 });
 
-
-
 Ext.override(Rally.ui.grid.TreeGrid, {
     _mergeColumnConfigs: function(newColumns, oldColumns) {
 
