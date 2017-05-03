@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue May 02 2017 18:25:34 GMT-0600 (MDT) -->
+    <!--  Build Date: Tue May 02 2017 18:35:16 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue May 02 2017 18:25:34 GMT-0600 (MDT)";
+        var APP_BUILD_DATE = "Tue May 02 2017 18:35:16 GMT-0600 (MDT)";
         var BUILDER = "corkr03";
-        var CHECKSUM = 181465731885;
+        var CHECKSUM = 180178919205;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -214,8 +214,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     getTimeInStateData: function(snapshots, field, value, dateField){
         snapshots = _.sortBy(snapshots, dateField);
 
-       // if (value === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-        console.log('getTimeInStateData value', value);
         if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
                 value = "";
         }
@@ -672,8 +670,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         timeInStateData[stateField] = {};
         Ext.Array.each(this.stateValues, function(stateValue){
            timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
+
         });
-        console.log('timeinstatedata', timeInStateData);
 
        return timeInStateData;
     },
@@ -875,7 +873,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 allowBlank: true,
                 allowNoEntry: true,
                 noEntryText: '-- No State --',
-                //noEntryValue: '-- No State --',
                 fieldLabel: 'Cycle Time State From',
                 labelAlign: 'right',
                 labelWidth: 150,
@@ -1102,7 +1099,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
             data.push({value: CArABU.technicalservices.CycleTimeCalculator.noStateText });
-            //data.push({value: "" });
         }
         model.getField(cb.getValue()).getAllowedValueStore().load({
             callback: function(records, operation){
