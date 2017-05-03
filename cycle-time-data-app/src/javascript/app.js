@@ -567,7 +567,7 @@
         return "Cycle Time End Date";
     },
     getTimeInStateColumnHeader: function(stateName){
-        return Ext.String.format("Time in {0} ({1}s)",stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
+        return Ext.String.format("Time in {0} ({1}s)", stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
     getHistoricalDataColumns: function(){
 
@@ -608,19 +608,22 @@
         if (fromState && toState){
             Ext.Array.each( this.getCycleStates(), function(s){
 
-                var header = this.getTimeInStateColumnHeader(s);
-                //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                //}
-                columns.push({
-                    xtype: 'timetemplatecolumn',
-                    dataType: 'timeInStateData',
-                    stateName: this.getStateField(),
-                    stateValue: s,
-                    text: header,
-                    flex: 1
-                });
-                if (s === toState){ return false; }
+                if (s && s.length > 0){
+                    var header = this.getTimeInStateColumnHeader(s);
+                    //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                    //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                    //}
+                    columns.push({
+                        xtype: 'timetemplatecolumn',
+                        dataType: 'timeInStateData',
+                        stateName: this.getStateField(),
+                        stateValue: s,
+                        text: header,
+                        flex: 1
+                    });
+                    if (s === toState){ return false; }
+                }
+
             }, this);
         }
         this.logger.log('getHistoricalDataColumns', columns);

@@ -120,7 +120,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         if (state.cycleStates && state.cycleStates.length > 0){
             Ext.Array.each(state.cycleStates, function(s){
                 if (state.cycleStateField !== "ScheduleState"){
-                    fromStates.push(CArABU.technicalservices.CycleTimeCalculator.creationDateText);
+                    fromStates.push(CArABU.technicalservices.CycleTimeCalculator.noStateText);
                 }
                 fromStates.push(s);
                 if (!state.cycleEndState || (state.cycleEndState === s) || toStates.length > 0){
@@ -140,8 +140,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 itemId: 'cb-fromState',
                 allowBlank: true,
                 allowNoEntry: true,
-                noEntryText: '-- Creation --',
-                noEntryValue: '-- Creation --',
+                noEntryText: '-- No State --',
                 fieldLabel: 'Cycle Time State From',
                 labelAlign: 'right',
                 labelWidth: 150,
@@ -289,6 +288,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 return r.get('value');
         });
         states = _.uniq(states);
+
         return {
             cycleStateField: cycleTimeField,
             cycleStartState: cycleStartState,
@@ -366,7 +366,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
-            data.push({value: CArABU.technicalservices.CycleTimeCalculator.creationDateText });
+            data.push({value: CArABU.technicalservices.CycleTimeCalculator.noStateText });
         }
         model.getField(cb.getValue()).getAllowedValueStore().load({
             callback: function(records, operation){
