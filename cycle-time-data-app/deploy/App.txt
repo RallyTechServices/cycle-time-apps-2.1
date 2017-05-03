@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Nov 21 2016 22:05:28 GMT-0700 (MST) -->
+    <!--  Build Date: Tue May 02 2017 18:25:34 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Nov 21 2016 22:05:28 GMT-0700 (MST)";
-        var BUILDER = "kcorkan";
-        var CHECKSUM = 180309912112;
+        var APP_BUILD_DATE = "Tue May 02 2017 18:25:34 GMT-0600 (MDT)";
+        var BUILDER = "corkr03";
+        var CHECKSUM = 181465731885;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -214,8 +214,10 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     getTimeInStateData: function(snapshots, field, value, dateField){
         snapshots = _.sortBy(snapshots, dateField);
 
-        if (value === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-            value = ""
+       // if (value === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+        console.log('getTimeInStateData value', value);
+        if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
+                value = "";
         }
 
         var inState = snapshots[0][field] === value,
@@ -246,7 +248,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         var startIdx = -1;
         precedence = _.filter(precedence, function(r){
-            return (r !== CArABU.technicalservices.CycleTimeCalculator.creationDateText);
+            return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
         });
 
         if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
@@ -670,8 +672,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         timeInStateData[stateField] = {};
         Ext.Array.each(this.stateValues, function(stateValue){
            timeInStateData[stateField][stateValue] = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots,stateField, stateValue, "_ValidFrom");
-
         });
+        console.log('timeinstatedata', timeInStateData);
 
        return timeInStateData;
     },
@@ -852,7 +854,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         if (state.cycleStates && state.cycleStates.length > 0){
             Ext.Array.each(state.cycleStates, function(s){
                 if (state.cycleStateField !== "ScheduleState"){
-                    fromStates.push(CArABU.technicalservices.CycleTimeCalculator.creationDateText);
+                    fromStates.push(CArABU.technicalservices.CycleTimeCalculator.noStateText);
                 }
                 fromStates.push(s);
                 if (!state.cycleEndState || (state.cycleEndState === s) || toStates.length > 0){
@@ -872,8 +874,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 itemId: 'cb-fromState',
                 allowBlank: true,
                 allowNoEntry: true,
-                noEntryText: '-- Creation --',
-                noEntryValue: '-- Creation --',
+                noEntryText: '-- No State --',
+                //noEntryValue: '-- No State --',
                 fieldLabel: 'Cycle Time State From',
                 labelAlign: 'right',
                 labelWidth: 150,
@@ -1021,6 +1023,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 return r.get('value');
         });
         states = _.uniq(states);
+
         return {
             cycleStateField: cycleTimeField,
             cycleStartState: cycleStartState,
@@ -1098,7 +1101,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         var data = [];
         if (cb.getValue() !== "ScheduleState"){
-            data.push({value: CArABU.technicalservices.CycleTimeCalculator.creationDateText });
+            data.push({value: CArABU.technicalservices.CycleTimeCalculator.noStateText });
+            //data.push({value: "" });
         }
         model.getField(cb.getValue()).getAllowedValueStore().load({
             callback: function(records, operation){
@@ -2327,7 +2331,7 @@ Ext.define('CA.technicalservices.Utility',{
         return "Cycle Time End Date";
     },
     getTimeInStateColumnHeader: function(stateName){
-        return Ext.String.format("Time in {0} ({1}s)",stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
+        return Ext.String.format("Time in {0} ({1}s)", stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
     getHistoricalDataColumns: function(){
 
@@ -2368,19 +2372,22 @@ Ext.define('CA.technicalservices.Utility',{
         if (fromState && toState){
             Ext.Array.each( this.getCycleStates(), function(s){
 
-                var header = this.getTimeInStateColumnHeader(s);
-                //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                //}
-                columns.push({
-                    xtype: 'timetemplatecolumn',
-                    dataType: 'timeInStateData',
-                    stateName: this.getStateField(),
-                    stateValue: s,
-                    text: header,
-                    flex: 1
-                });
-                if (s === toState){ return false; }
+                if (s && s.length > 0){
+                    var header = this.getTimeInStateColumnHeader(s);
+                    //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
+                    //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                    //}
+                    columns.push({
+                        xtype: 'timetemplatecolumn',
+                        dataType: 'timeInStateData',
+                        stateName: this.getStateField(),
+                        stateValue: s,
+                        text: header,
+                        flex: 1
+                    });
+                    if (s === toState){ return false; }
+                }
+
             }, this);
         }
         this.logger.log('getHistoricalDataColumns', columns);
