@@ -3,10 +3,10 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Nov 21 2016 22:05:29 GMT-0700 (MST) -->
+    <!--  Build Date: Tue May 02 2017 18:35:16 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Nov 21 2016 22:05:29 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Tue May 02 2017 18:35:16 GMT-0600 (MDT)";
         var CHECKSUM = [%= checksum %];
     </script>
     

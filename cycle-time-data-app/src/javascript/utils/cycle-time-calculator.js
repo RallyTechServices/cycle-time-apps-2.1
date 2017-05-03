@@ -9,8 +9,8 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     getTimeInStateData: function(snapshots, field, value, dateField){
         snapshots = _.sortBy(snapshots, dateField);
 
-        if (value === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-            value = ""
+        if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
+                value = "";
         }
 
         var inState = snapshots[0][field] === value,
@@ -41,7 +41,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         var startIdx = -1;
         precedence = _.filter(precedence, function(r){
-            return (r !== CArABU.technicalservices.CycleTimeCalculator.creationDateText);
+            return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
         });
 
         if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
