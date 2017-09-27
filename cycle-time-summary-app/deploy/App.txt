@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Sep 26 2017 17:10:31 GMT-0700 (PDT) -->
+    <!--  Build Date: Wed Sep 27 2017 15:50:43 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Sep 26 2017 17:10:31 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Wed Sep 27 2017 15:50:43 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 217160620833;
+        var CHECKSUM = 217586758339;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -988,21 +988,23 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     scope: this,
                     select: this.updateCycleTimeParameters
                 }
-            },{
-                xtype: 'rallynumberfield',
-                fieldLabel: 'Last n months',
-                itemId: 'lastNMonths',
-                labelAlign: 'right',
-                labelSeparator: "",
-                labelWidth: 150,
-                width: 165,
-                value: 6,
-                toolTipText: "Select the n number of months to calculate the cycle times",
-                listeners: {
-                    scope: this,
-                    select: this.updateCycleTimeParameters
-                }
-            }]
+            }
+            // ,{
+            //     xtype: 'rallytextfield',
+            //     fieldLabel: 'Last n months',
+            //     itemId: 'lastNMonths',
+            //     labelAlign: 'right',
+            //     labelSeparator: "",
+            //     labelWidth: 10,
+            //     width: 165,
+            //     value: 6,
+            //     toolTipText: "Select the n number of months to calculate the cycle times",
+            //     listeners: {
+            //         scope: this,
+            //         select: this.updateCycleTimeParameters
+            //     }
+            //}
+            ]
         });
 
 
@@ -1845,7 +1847,7 @@ Ext.define('CA.technicalservices.Utility',{
           //  includeTypes:  ['HierarchicalRequirement','Defect'],
             artifactType: 'HierarchicalRequirement',
             queryFilter: "",
-            granularity: 'day',
+            granularity: 'minute',
             precision: 2,
             exportLimit: 1000
         }
@@ -2208,6 +2210,7 @@ Ext.define('CA.technicalservices.Utility',{
     },
 
     getChartConfig: function() {
+        var me = this;
         return {
             chart: {
                 type: 'column'
@@ -2220,7 +2223,7 @@ Ext.define('CA.technicalservices.Utility',{
             yAxis: {
                 min: 0,
                     title: {
-                    text: 'Days'
+                    text: me.getSetting('granularity')//'Days'
                 }
             },
             plotOptions: {
