@@ -30,7 +30,7 @@
           //  includeTypes:  ['HierarchicalRequirement','Defect'],
             artifactType: 'HierarchicalRequirement',
             queryFilter: "",
-            granularity: 'day',
+            granularity: 'minute',
             precision: 2,
             exportLimit: 1000
         }
@@ -393,6 +393,7 @@
     },
 
     getChartConfig: function() {
+        var me = this;
         return {
             chart: {
                 type: 'column'
@@ -405,7 +406,7 @@
             yAxis: {
                 min: 0,
                     title: {
-                    text: 'Days'
+                    text: me.getSetting('granularity')//'Days'
                 }
             },
             plotOptions: {

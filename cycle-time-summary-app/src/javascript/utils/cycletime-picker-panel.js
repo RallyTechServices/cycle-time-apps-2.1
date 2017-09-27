@@ -243,21 +243,23 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     scope: this,
                     select: this.updateCycleTimeParameters
                 }
-            },{
-                xtype: 'rallynumberfield',
-                fieldLabel: 'Last n months',
-                itemId: 'lastNMonths',
-                labelAlign: 'right',
-                labelSeparator: "",
-                labelWidth: 150,
-                width: 165,
-                value: 6,
-                toolTipText: "Select the n number of months to calculate the cycle times",
-                listeners: {
-                    scope: this,
-                    select: this.updateCycleTimeParameters
-                }
-            }]
+            }
+            // ,{
+            //     xtype: 'rallytextfield',
+            //     fieldLabel: 'Last n months',
+            //     itemId: 'lastNMonths',
+            //     labelAlign: 'right',
+            //     labelSeparator: "",
+            //     labelWidth: 10,
+            //     width: 165,
+            //     value: 6,
+            //     toolTipText: "Select the n number of months to calculate the cycle times",
+            //     listeners: {
+            //         scope: this,
+            //         select: this.updateCycleTimeParameters
+            //     }
+            //}
+            ]
         });
 
 
