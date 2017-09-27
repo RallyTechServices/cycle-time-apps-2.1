@@ -1,0 +1,13 @@
+.DS_Store
+.grunt/
+grunt/
+/node_modules/
+auth.json*
+App-debug.html
+_SpecRunner.html
+/test/logs/
+deploy/app.min.js
+.project
+.settings
+deploy/ConfluenceApp.txt
+deploy/ExternalApp.txt

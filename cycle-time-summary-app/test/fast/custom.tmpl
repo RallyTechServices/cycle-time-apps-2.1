@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jasmine Spec Runner</title>
+
+    <script type="text/javascript">
+        // some global variables
+        var app_context = null;
+    </script>
+    
+    <% with (scripts) { %>
+    
+        <% [].concat(polyfills, jasmine, boot, vendor, src, helpers, specs, reporters).forEach(function(script){ %>
+            <script src="<%= script %>"></script>
+        <% }); %>
+        
+        <% [].concat(options.css_files).forEach(function(cssFile) { %>
+            <link rel="stylesheet" type="text/css" href="<%= cssFile %>">
+        <% }); %>
+    <% } %>
+    
+    <link rel="stylesheet" type="text/css" href=".grunt/grunt-contrib-jasmine/jasmine.css">
+</head>
+<body></body>
+</html>
