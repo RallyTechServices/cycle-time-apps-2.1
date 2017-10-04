@@ -304,8 +304,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateToState: function(cbFrom){
 
         var toStateCombo = this.down('#cb-toState');
+        var rqStateCombo = this.down('#cb-rqState');
 
         toStateCombo && toStateCombo.setDisabled(true);
+        rqStateCombo && rqStateCombo.setDisabled(true);
 
         if (!cbFrom || !cbFrom.getValue() || !cbFrom.getRecord() || !toStateCombo){
             return;
@@ -320,6 +322,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         });
         toStateCombo.setDisabled(false);
         toStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
+
+        rqStateCombo.setDisabled(false);
+        rqStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
+
         //if (this.state && this.state.cycleEndState && toStateCombo.getValue() !== this.state.cycleEndState){
         //    toStateCombo.setValue(this.state.cycleEndState);
         //}
@@ -414,17 +420,22 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateStateDropdowns: function(cb){
 
         var fromStateCombo = this.down('#cb-fromState'),
-            toStateCombo = this.down('#cb-toState');
+            toStateCombo = this.down('#cb-toState'),
+            rqStateCombo = this.down('#cb-rqState');
 
         var toStatePreviousValue = toStateCombo && toStateCombo.getValue(),
-            fromStatePreviousValue = fromStateCombo && fromStateCombo.getValue();
+            fromStatePreviousValue = fromStateCombo && fromStateCombo.getValue(),
+            rqStatePreviousValue = rqStateCombo && rqStateCombo.getValue();
 
         fromStateCombo && fromStateCombo.setDisabled(true);
         toStateCombo &&  toStateCombo.setDisabled(true);
+        rqStateCombo && rqStateCombo.setDisabled(true);
+
         var store = Ext.create('Rally.data.custom.Store',{
             data: []
         });
         toStateCombo.bindStore(store);
+        rqStateCombo.bindStore(store);
 
         if (!cb || !cb.getValue() || !cb.getRecord()){
             return;
@@ -454,6 +465,12 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 toStateCombo.setDisabled(false);
                 if (toStatePreviousValue){
                     toStateCombo.setValue(toStatePreviousValue);
+                }
+
+                rqStateCombo.bindStore(store);
+                rqStateCombo.setDisabled(false);
+                if (rqStatePreviousValue){
+                    rqStateCombo.setValue(rqStatePreviousValue);
                 }
 
                 this.updateCycleTimeParameters();

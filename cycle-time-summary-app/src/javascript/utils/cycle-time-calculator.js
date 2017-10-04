@@ -22,7 +22,13 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         if (startTime){
             info[idx] = [startTime]
         }
+        var acceptedDate;
+
         Ext.Array.each(snapshots, function(snap){
+            if(snap.ScheduleState == 'Accepted'){
+                acceptedDate = Rally.util.DateTime.fromIsoString(snap['AcceptedDate']);
+            }
+
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
             if (inState && snap[field] !== value){
                 info[idx].push(thisDate);
@@ -31,8 +37,14 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             } else if (!inState && snap[field] === value){
                 info[idx] = [thisDate];
                 inState = true;
-            }
+            } 
         });
+
+        //Add AccptedDate as the last value if ScheduleState is Accepted. 
+        if(info.length > 1 && info[info.length-1].length == 1){
+            info[info.length-1].push(acceptedDate);
+        }
+
         //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
@@ -44,7 +56,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
         });
 
-        if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
+        if (!Ext.isEmpty(startValue) && startValue !== CArABU.technicalservices.CycleTimeCalculator.noStateText){  //This is in case there is no start value (which means grab the first snapshot)
             startIdx = _.indexOf(precedence, startValue);
         }
         var endIdx = _.indexOf(precedence, endValue);

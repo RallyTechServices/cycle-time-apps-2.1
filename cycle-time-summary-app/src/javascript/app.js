@@ -274,6 +274,11 @@
      },
      updateGrid: function(){
 
+        if(this.getSelectedProjects().length == 0){
+            this.updateMessageBox("No project selected select one or more projects to display the Summary");
+            return;
+        }
+
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
@@ -281,7 +286,7 @@
 
          this.getGridBox().removeAll();
          this.updateMessageBox();
-         this.setUpdateButtonUpdateable(false);
+         //this.setUpdateButtonUpdateable(false);
          this.setLoading('Loading Current Data...');
 
          this.fetchWsapiArtifactData().then({
@@ -316,9 +321,15 @@
 
         var cycle_time_summary = {};
         var results = [];
+        var cycle_states = me.getCycleStates();
+        var ready_queue_end_value = me.getReqdyQueueStateValue();
+        if(ready_queue_end_value == "(No State)"){
+            ready_queue_end_value = cycle_states[2]
+        }
+
         // Calculate the averages for each project
         Ext.Array.each(records,function(artifact){
-            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),me.getReqdyQueueStateValue(),me.getCycleStates());
+            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states);
             if(cycle_time_summary[artifact.get('Project').ObjectID]){
                 cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
                 cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
