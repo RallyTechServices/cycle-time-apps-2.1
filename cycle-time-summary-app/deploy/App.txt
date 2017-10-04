@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Sep 27 2017 15:50:43 GMT-0700 (PDT) -->
+    <!--  Build Date: Wed Oct 04 2017 06:53:21 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Sep 27 2017 15:50:43 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Wed Oct 04 2017 06:53:21 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 217586758339;
+        var CHECKSUM = 225615715894;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -238,7 +238,13 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         if (startTime){
             info[idx] = [startTime]
         }
+        var acceptedDate;
+
         Ext.Array.each(snapshots, function(snap){
+            if(snap.ScheduleState == 'Accepted'){
+                acceptedDate = Rally.util.DateTime.fromIsoString(snap['AcceptedDate']);
+            }
+
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
             if (inState && snap[field] !== value){
                 info[idx].push(thisDate);
@@ -247,8 +253,14 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             } else if (!inState && snap[field] === value){
                 info[idx] = [thisDate];
                 inState = true;
-            }
+            } 
         });
+
+        //Add AccptedDate as the last value if ScheduleState is Accepted. 
+        if(info.length > 1 && info[info.length-1].length == 1){
+            info[info.length-1].push(acceptedDate);
+        }
+
         //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
@@ -260,7 +272,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
         });
 
-        if (!Ext.isEmpty(startValue)){  //This is in case there is no start value (which means grab the first snapshot)
+        if (!Ext.isEmpty(startValue) && startValue !== CArABU.technicalservices.CycleTimeCalculator.noStateText){  //This is in case there is no start value (which means grab the first snapshot)
             startIdx = _.indexOf(precedence, startValue);
         }
         var endIdx = _.indexOf(precedence, endValue);
@@ -700,6 +712,12 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     operator: 'in',
                     value: objectIDs
                 }
+                ,
+                {
+                    property: 'ScheduleState',
+                    operator: '<=',
+                    value: 'Accepted'
+                }                
             ],
             useHttpPost: this.USE_POST,
             sorters: [{
@@ -725,7 +743,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return deferred;
     },
     _getFetchList: function(){
-        var fetch = ['FormattedID', '_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
+        var fetch = ['FormattedID','AcceptedDate','ScheduleState','_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
         if (this.includeReady){
             fetch = fetch.concat(["Ready","_PreviousValues.Ready"]);
         }
@@ -739,7 +757,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         if (Ext.Array.contains(hydratedFields, this.stateField)){
             return [this.stateField, "_PreviousValues." + this.stateField];
         }
-        return [];
+        return ['ScheduleState'];
     }
 
 });
@@ -1049,8 +1067,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateToState: function(cbFrom){
 
         var toStateCombo = this.down('#cb-toState');
+        var rqStateCombo = this.down('#cb-rqState');
 
         toStateCombo && toStateCombo.setDisabled(true);
+        rqStateCombo && rqStateCombo.setDisabled(true);
 
         if (!cbFrom || !cbFrom.getValue() || !cbFrom.getRecord() || !toStateCombo){
             return;
@@ -1065,6 +1085,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         });
         toStateCombo.setDisabled(false);
         toStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
+
+        rqStateCombo.setDisabled(false);
+        rqStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
+
         //if (this.state && this.state.cycleEndState && toStateCombo.getValue() !== this.state.cycleEndState){
         //    toStateCombo.setValue(this.state.cycleEndState);
         //}
@@ -1159,17 +1183,22 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     _updateStateDropdowns: function(cb){
 
         var fromStateCombo = this.down('#cb-fromState'),
-            toStateCombo = this.down('#cb-toState');
+            toStateCombo = this.down('#cb-toState'),
+            rqStateCombo = this.down('#cb-rqState');
 
         var toStatePreviousValue = toStateCombo && toStateCombo.getValue(),
-            fromStatePreviousValue = fromStateCombo && fromStateCombo.getValue();
+            fromStatePreviousValue = fromStateCombo && fromStateCombo.getValue(),
+            rqStatePreviousValue = rqStateCombo && rqStateCombo.getValue();
 
         fromStateCombo && fromStateCombo.setDisabled(true);
         toStateCombo &&  toStateCombo.setDisabled(true);
+        rqStateCombo && rqStateCombo.setDisabled(true);
+
         var store = Ext.create('Rally.data.custom.Store',{
             data: []
         });
         toStateCombo.bindStore(store);
+        rqStateCombo.bindStore(store);
 
         if (!cb || !cb.getValue() || !cb.getRecord()){
             return;
@@ -1199,6 +1228,12 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 toStateCombo.setDisabled(false);
                 if (toStatePreviousValue){
                     toStateCombo.setValue(toStatePreviousValue);
+                }
+
+                rqStateCombo.bindStore(store);
+                rqStateCombo.setDisabled(false);
+                if (rqStatePreviousValue){
+                    rqStateCombo.setValue(rqStatePreviousValue);
                 }
 
                 this.updateCycleTimeParameters();
@@ -2091,6 +2126,11 @@ Ext.define('CA.technicalservices.Utility',{
      },
      updateGrid: function(){
 
+        if(this.getSelectedProjects().length == 0){
+            this.updateMessageBox("No project selected select one or more projects to display the Summary");
+            return;
+        }
+
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
@@ -2098,7 +2138,7 @@ Ext.define('CA.technicalservices.Utility',{
 
          this.getGridBox().removeAll();
          this.updateMessageBox();
-         this.setUpdateButtonUpdateable(false);
+         //this.setUpdateButtonUpdateable(false);
          this.setLoading('Loading Current Data...');
 
          this.fetchWsapiArtifactData().then({
@@ -2133,9 +2173,15 @@ Ext.define('CA.technicalservices.Utility',{
 
         var cycle_time_summary = {};
         var results = [];
+        var cycle_states = me.getCycleStates();
+        var ready_queue_end_value = me.getReqdyQueueStateValue();
+        if(ready_queue_end_value == "(No State)"){
+            ready_queue_end_value = cycle_states[2]
+        }
+
         // Calculate the averages for each project
         Ext.Array.each(records,function(artifact){
-            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),me.getReqdyQueueStateValue(),me.getCycleStates());
+            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states);
             if(cycle_time_summary[artifact.get('Project').ObjectID]){
                 cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
                 cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);

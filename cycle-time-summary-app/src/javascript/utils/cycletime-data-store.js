@@ -125,6 +125,12 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     operator: 'in',
                     value: objectIDs
                 }
+                ,
+                {
+                    property: 'ScheduleState',
+                    operator: '<=',
+                    value: 'Accepted'
+                }                
             ],
             useHttpPost: this.USE_POST,
             sorters: [{
@@ -150,7 +156,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return deferred;
     },
     _getFetchList: function(){
-        var fetch = ['FormattedID', '_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
+        var fetch = ['FormattedID','AcceptedDate','ScheduleState','_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
         if (this.includeReady){
             fetch = fetch.concat(["Ready","_PreviousValues.Ready"]);
         }
@@ -164,7 +170,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         if (Ext.Array.contains(hydratedFields, this.stateField)){
             return [this.stateField, "_PreviousValues." + this.stateField];
         }
-        return [];
+        return ['ScheduleState'];
     }
 
 });
