@@ -28,7 +28,7 @@
     config: {
         defaultSettings: {
           //  includeTypes:  ['HierarchicalRequirement','Defect'],
-            artifactType: 'HierarchicalRequirement',
+            artifactType: 'User Story & Defect',
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
@@ -117,19 +117,19 @@
         });
         bt.on('click', this.updateGrid, this);
 
-        // this.getSelectorBoxRight().add({
-        //     xtype: 'rallybutton',
-        //     style: {'float': 'right'},
-        //     cls: 'secondary rly-small',
-        //     margin: '3 9 0 0',
-        //     frame: false,
-        //     itemId: 'actions-menu-button',
-        //     iconCls: 'icon-export',
-        //     listeners: {
-        //         click: this.showExportMenu,
-        //         scope: this
-        //     }
-        // });
+        this.getSelectorBoxRight().add({
+            xtype: 'rallybutton',
+            style: {'float': 'right'},
+            cls: 'secondary rly-small',
+            margin: '3 9 0 0',
+            frame: false,
+            itemId: 'actions-menu-button',
+            iconCls: 'icon-export',
+            listeners: {
+                click: this._export,
+                scope: this
+            }
+        });
 
         // this.getSelectorBoxRight().add({
         //     xtype: 'rallybutton',
@@ -351,12 +351,12 @@
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
 
         Ext.Object.each(cycle_time_summary,function(key,value){
-            value.AvgLeadTime = Ext.util.Format.number(value.LeadTime / value.TotalArtifacts,"0.00");
-            value.AvgBlockTime = Ext.util.Format.number(value.BlockTime / value.TotalArtifacts,"0.00");
-            value.AvgReadyTime = Ext.util.Format.number(value.ReadyTime / value.TotalArtifacts,"0.00");
-            value.AvgReadyQueueTime = Ext.util.Format.number(value.ReadyQueueTime / value.TotalArtifacts,"0.00");
-            value.AvgCycleTime = Ext.util.Format.number(value.AvgLeadTime - value.AvgReadyQueueTime,"0.00");
-            value.AvgActiveCycleTime = Ext.util.Format.number(value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime,"0.00");
+            value.AvgLeadTime = Ext.Number.toFixed(value.LeadTime / value.TotalArtifacts,2);
+            value.AvgBlockTime = Ext.Number.toFixed(value.BlockTime / value.TotalArtifacts,2);
+            value.AvgReadyTime = Ext.Number.toFixed(value.ReadyTime / value.TotalArtifacts,2);
+            value.AvgReadyQueueTime = Ext.Number.toFixed(value.ReadyQueueTime / value.TotalArtifacts,2);
+            value.AvgCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime,2);
+            value.AvgActiveCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime,2);
             results.push(value);
         })
         me.addSummaryGrid(results);
@@ -394,10 +394,8 @@
         
         return { 
             series: [ 
-                { name: "Lead", data: lead },
-                { name: "Cycle", data: cycle },
-                { name: "Active", data: active },
-                { name: "Ready Q", data: ready_queue }
+                { name: "Lead", data: lead, pointPadding: 0.3, color: 'Orange' },
+                { name: "Cycle", data: cycle, pointPadding: 0.4, color: 'Green'  }
             ],
             categories: categories
         };
@@ -422,17 +420,19 @@
             },
             plotOptions: {
                 column: {
-                    stacking: 'normal',
                     dataLabels: {
                         enabled: true
-                    }
+                    },
+                    grouping: false,
+                    shadow: false,
+                    borderWidth: 0                    
                 }
             }
         };
     },     
 
      addSummaryGrid: function(results){
-         //this.logger.log('addGrid',records, records.length);
+         this.logger.log('addSummaryGrid',results, results.length);
          this.suspendLayouts();
          var store = Ext.create('Rally.data.custom.Store',{
              data: results
@@ -444,32 +444,35 @@
              columnCfgs: this.getSummaryColumnCfgs(),
              showPagingToolbar: true,
              scroll: 'vertical',
-             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and projects selected.</div></div>'
+            features: [{
+                ftype: 'summary'
+            }],
+            ptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and projects selected.</div></div>'
          });
          this.resumeLayouts(true);
      },
 
-     addGrid: function(records){
-         //this.logger.log('addGrid',records, records.length);
-         var fields = records.length > 0 && records[0].getFields() || undefined;
+     // addGrid: function(records){
+     //     //this.logger.log('addGrid',records, records.length);
+     //     var fields = records.length > 0 && records[0].getFields() || undefined;
 
-         this.suspendLayouts();
-         var store = Ext.create('Rally.data.custom.Store',{
-             data: records,
-             fields: fields,
-             pageSize: 25 //records.length
-         });
+     //     this.suspendLayouts();
+     //     var store = Ext.create('Rally.data.custom.Store',{
+     //         data: records,
+     //         fields: fields,
+     //         pageSize: 25 //records.length
+     //     });
 
-         this.getGridBox().add({
-             xtype: 'rallygrid',
-             store: store,
-             columnCfgs: this.getColumnCfgs(records[0]),
-             showPagingToolbar: true,
-             scroll: 'vertical',
-             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
-         });
-         this.resumeLayouts(true);
-     },
+     //     this.getGridBox().add({
+     //         xtype: 'rallygrid',
+     //         store: store,
+     //         columnCfgs: this.getColumnCfgs(records[0]),
+     //         showPagingToolbar: true,
+     //         scroll: 'vertical',
+     //         emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
+     //     });
+     //     this.resumeLayouts(true);
+     // },
 
      fetchWsapiArtifactData: function(){
          var deferred = Ext.create('Deft.Deferred');
@@ -491,10 +494,10 @@
                      var count =  operation && operation.resultSet && operation.resultSet.total;
                      this.logger.log('count', count, this.getExportLimit());
                      if (count > this.getExportLimit()){
-                         this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} can be fetched for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
+                         //this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} can be fetched for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
                         deferred.resolve(null);
                      } else {
-                         this.updateMessageBox(Ext.String.format('{0} current records found.', count));
+                         //this.updateMessageBox(Ext.String.format('{0} current records found.', count));
                          deferred.resolve(records);
                      }
 
@@ -699,11 +702,12 @@
                 fromState: fromState,
                 toState: toState,
                 startDate: this.getStartDate(),
-                endDate: this.getEndDate()
+                endDate: this.getEndDate(),
+                projects: this.getSelectedProjectOids()
             }).load(records).then({
                 success: function (updatedRecords) {
 
-                    this.updateMessageBox(Ext.String.format("Displaying {0} of {1} records with relevant cycle time data.", updatedRecords.length, records.length));
+                    //this.updateMessageBox(Ext.String.format("Displaying {0} of {1} records with relevant cycle time data.", updatedRecords.length, records.length));
 
                     deferred.resolve(updatedRecords);
                 },
@@ -836,31 +840,44 @@
         var columns = [{
             dataIndex: 'Project',
             text:'Project',
+            summaryRenderer: function() {
+                return "Total"; 
+            },
             flex:1
         },
         {
             dataIndex: 'AvgLeadTime',
-            text:'Avg. Lead Time'
+            text:'Avg. Lead Time',
+            summaryType: 'average',
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                console.log('summaryData', summaryData,value);
+                return value; 
+            }
         },
         {
             dataIndex: 'AvgReadyQueueTime',
-            text:'Avg. Ready Queue Time'
+            text:'Avg. Ready Queue Time',
+            summaryType: 'average'
         },
         {
             dataIndex: 'AvgCycleTime',
-            text:'Avg. Cycle Time'
+            text:'Avg. Cycle Time',
+            summaryType: 'average'
         },
         {
             dataIndex: 'AvgActiveCycleTime',
-            text:'Avg. Active Cycle Time'
+            text:'Avg. Active Cycle Time',
+            summaryType: 'average'
         },
         {
             dataIndex: 'AvgBlockTime',
-            text:'Avg. Block Time'
+            text:'Avg. Block Time',
+            summaryType: 'average'
         },
         {
             dataIndex: 'AvgReadyTime',
-            text:'Avg. Ready to Pull Time'
+            text:'Avg. Ready to Pull Time',
+            summaryType: 'average'
         }
 
         ];
@@ -868,6 +885,34 @@
 
         return columns;
     },
+
+
+    _export: function(){
+        var grid = this.down('rallygrid');
+        var me = this;
+
+        if ( !grid ) { return; }
+        
+        this.logger.log('_export',grid);
+
+        var filename = Ext.String.format('export.csv');
+
+        this.setLoading("Generating CSV");
+        Deft.Chain.sequence([
+            function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
+        ]).then({
+            scope: this,
+            success: function(csv){
+                if (csv && csv.length > 0){
+                    Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
+                } else {
+                    Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
+                }
+                
+            }
+        }).always(function() { me.setLoading(false); });
+    },
+
 
     exportData: function(includeTimestamps, includeSummary){
         var grid = this.down('rallygrid');
@@ -1040,6 +1085,14 @@
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.projects || null;
     },
 
+    getSelectedProjectOids: function(){
+        var projects_refs =  [];
+        Ext.Array.each(this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.projects, function(project){
+            projects_refs.push(Rally.util.Ref.getOidFromRef(project));
+        });
+        return projects_refs;
+    },
+
     getLastNMonths: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.lastNMonths || null;
     },
@@ -1058,8 +1111,14 @@
         //    modelNames = modelNames.split(',');
         //    return modelNames;
         //}
+
+        if(modelNames == "Feature"){
+            return ['PortfolioItem/Feature'];
+        }else{
+            return ['HierarchicalRequirement','Defect'];
+        }
+
         this.logger.log('getModelNames', modelNames);
-        return [modelNames] || [];
     },
     getSelectorBox: function(){
         return this.down('#selector_box');

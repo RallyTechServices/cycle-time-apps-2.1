@@ -78,7 +78,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 xtype: 'rallyfieldcombobox',
                 model: this.modelNames[0],
                 itemId: 'cb-StateField',
-                fieldLabel: "Cycle Time Field",
+                fieldLabel: "Workflow State",
                 labelAlign: 'right',
                 labelWidth: 150,
                 width: 300,
@@ -143,12 +143,13 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 allowBlank: true,
                 allowNoEntry: true,
                 noEntryText: '-- No State --',
-                fieldLabel: 'Cycle Time State From',
+                fieldLabel: 'Workflow State From',
                 labelAlign: 'right',
                 labelWidth: 150,
                 width: 300,
                 store: Ext.create('Rally.data.custom.Store', {data: fromStates}),
-                value: state.cycleStartState || null,
+                defaultSelectionPosition : 'first',
+                value: state.cycleStartState,
                 valueField: 'value',
                 displayField: 'value'
             },{
@@ -161,9 +162,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 allowBlank: false,
                 disabled: toStates.length === 0,
                 store: Ext.create('Rally.data.custom.Store', {data:toStates}),
-                value: state.cycleEndState || null,
+                defaultSelectionPosition :'last',
+                value: state.cycleEndState,
                 valueField: 'value',
-                displayField: 'value',
+                displayField: 'value'
+                ,
                 listeners: {
                     scope: this,
                     select: this.updateCycleTimeParameters
@@ -181,9 +184,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 allowBlank: false,
                 disabled: toStates.length === 0,
                 store: Ext.create('Rally.data.custom.Store', {data:toStates}),
-                value: state.cycleReadyQueueState || null,
+                defaultSelectionPosition : 'first',
+                value: state.cycleReadyQueueState,
                 valueField: 'value',
-                displayField: 'value',
+                displayField: 'value'
+                ,
                 listeners: {
                     scope: this,
                     select: this.updateCycleTimeParameters
@@ -459,18 +464,24 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 fromStateCombo.setDisabled(false);
                 if (fromStatePreviousValue){
                     fromStateCombo.setValue(fromStatePreviousValue);
+                }else{
+                    fromStateCombo.setValue(data && data[0].value|| null)
                 }
 
                 toStateCombo.bindStore(store);
                 toStateCombo.setDisabled(false);
                 if (toStatePreviousValue){
                     toStateCombo.setValue(toStatePreviousValue);
+                }else{
+                    toStateCombo.setValue(data && data.length > 0 && data[data.length-1].value || null);
                 }
 
                 rqStateCombo.bindStore(store);
                 rqStateCombo.setDisabled(false);
                 if (rqStatePreviousValue){
                     rqStateCombo.setValue(rqStatePreviousValue);
+                }else{
+                    rqStateCombo.setValue(data && data[0].value|| null);
                 }
 
                 this.updateCycleTimeParameters();
