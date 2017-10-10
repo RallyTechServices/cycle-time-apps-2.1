@@ -14,6 +14,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         this.toState = config.toState;
         this.startDate = config.startDate || null;
         this.endDate = config.endDate || null;
+        this.projects = config.projects || [];
     },
 
     load: function(records){
@@ -65,7 +66,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             var cycleTimeData = this._mungeCycleTimeData(snapshots);
             var timeInStateData = this._mungeTimeInStateData(snapshots);
 
-            if (this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
+            if (cycleTimeData && this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
                 r.set("cycleTimeData",cycleTimeData);
                 r.set("timeInStateData", timeInStateData);
                 updatedRecords.push(r);
@@ -130,7 +131,12 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     property: 'ScheduleState',
                     operator: '<=',
                     value: 'Accepted'
-                }                
+                },
+                {
+                    property: 'Project',
+                    operator: 'in',
+                    value: this.projects
+                }
             ],
             useHttpPost: this.USE_POST,
             sorters: [{

@@ -41,7 +41,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         });
 
         //Add AccptedDate as the last value if ScheduleState is Accepted. 
-        if(info.length > 1 && info[info.length-1].length == 1){
+        if(info.length > 0 && info[info.length-1].length == 1){
             info[info.length-1].push(acceptedDate);
         }
 
@@ -106,6 +106,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
     },
+
     getGranularityMultiplier: function(granularity){
         granularity = granularity.toLowerCase();
         if (granularity === 'minute'){ return 60; }

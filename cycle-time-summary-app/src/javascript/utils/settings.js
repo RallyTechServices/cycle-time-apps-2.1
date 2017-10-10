@@ -2,39 +2,40 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
     getFields: function(modelNames){
-        var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
-            includeDefect = Ext.Array.contains(modelNames, 'Defect');
+        // var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
+        //     includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
-        var filters = [{
-            property: 'TypePath',
-            operator: 'contains',
-            value: 'PortfolioItem/'
-        },{
-            property: 'TypePath',
-            value: 'Defect'
-        },{
-            property: 'TypePath',
-            value: 'HierarchicalRequirement'
-        }];
-        filters = Rally.data.wsapi.Filter.or(filters);
-
+        // var filters = [{
+        //     property: 'TypePath',
+        //     operator: 'contains',
+        //     value: 'PortfolioItem/'
+        // },{
+        //     property: 'TypePath',
+        //     value: 'Defect'
+        // },{
+        //     property: 'TypePath',
+        //     value: 'HierarchicalRequirement'
+        // }];
+        // filters = Rally.data.wsapi.Filter.or(filters);
+        var types = Ext.create('Ext.data.Store', {
+            fields: ['name'],
+            data : [
+                {"name":"User Story & Defect"},
+                {"name":"Feature"}
+            ]
+        });
 
         return [{
-            xtype: 'rallycombobox',
+            xtype: 'combobox',
             name: 'artifactType',
-            storeConfig: {
-                model: 'TypeDefinition',
-                filters: filters,
-                fetch: ['TypePath','DisplayName'],
-                remoteFilter: true
-            },
+            store: types,
             fieldLabel: 'Artifact Type',
+            queryMode: 'local',            
             allowBlank: false,
             labelAlign: 'right',
             labelWidth: 100,
-            valueField: 'TypePath',
-            displayField: 'DisplayName'
-
+            valueField: 'name',
+            displayField: 'name'
         },{
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
