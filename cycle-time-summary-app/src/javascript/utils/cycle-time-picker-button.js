@@ -9,6 +9,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     stateId: 'cycleTimePanel',
     stateEvents: ['expand', 'collapse', 'parametersupdated'],
     text: '',
+    dateType:'',
 
     config: {
         context: undefined,
@@ -144,6 +145,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
                 modelNames: this.modelNames,
                 models: this.models,
                 context: this.context,
+                dateType: this.dateType,
                 flex: 1
             });
             this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);

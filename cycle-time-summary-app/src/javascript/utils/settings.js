@@ -1,7 +1,7 @@
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
-    getFields: function(modelNames){
+    getFields: function(settings){
         // var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
         //     includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
@@ -17,6 +17,10 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         //     value: 'HierarchicalRequirement'
         // }];
         // filters = Rally.data.wsapi.Filter.or(filters);
+        current_date_type = (settings && settings.dateType) || 'DateRange',
+
+        console.log('settings>>',settings);
+
         var types = Ext.create('Ext.data.Store', {
             fields: ['name'],
             data : [
@@ -35,7 +39,8 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'right',
             labelWidth: 100,
             valueField: 'name',
-            displayField: 'name'
+            displayField: 'name',
+            value: settings.artifactType
         },{
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
@@ -43,8 +48,64 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'right',
             labelWidth: 100,
             minValue: 10,
-            maxValue: 10000
-        },{
+            maxValue: 10000,
+            value: settings.exportLimit
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Date Type',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Date Range",
+                name: 'dateType',
+                inputValue: "DateRange"
+                ,
+                checked: "DateRange" === current_date_type
+            }, {
+                boxLabel: "Last N Weeks",
+                name: 'dateType',
+                inputValue: "LastNWeeks"
+                ,
+                checked: "LastNWeeks" === current_date_type
+            }, {
+                boxLabel: "Last N Months",
+                name: 'dateType',
+                inputValue: "LastNMonths"
+                ,
+                checked: "LastNMonths" === current_date_type
+            }]
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Granularity',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            width:300,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Day",
+                name: 'granularity',
+                inputValue: "day"
+                ,
+                checked: "day" === settings.granularity
+            }, {
+                boxLabel: "Minute",
+                name: 'granularity',
+                inputValue: "minute"
+                ,
+                checked: "minute" === settings.granularity
+            }]
+                }
+
+        ,{
             xtype: 'textarea',
             fieldLabel: 'Query',
             name: 'queryFilter',

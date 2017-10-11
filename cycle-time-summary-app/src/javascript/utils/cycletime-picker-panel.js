@@ -13,6 +13,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     animCollapse: false,
     stateful: true,
     stateId: 'cycleTimePanel',
+    dateType:'',
 
     constructor: function(config) {
         this.mergeConfig(config);
@@ -193,8 +194,47 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     scope: this,
                     select: this.updateCycleTimeParameters
                 }
-        },
-        {
+        });
+
+
+
+
+
+
+        if(this.dateType == 'LastNMonths'){
+            this.add({
+                xtype: 'rallytextfield',
+                fieldLabel: 'Last n Months',
+                itemId: 'lastNMonths',
+                labelAlign: 'right',
+                labelSeparator: "",
+                labelWidth: 150,
+                width: 200,
+                value: 6,
+                toolTipText: "Select the n number of months to calculate the cycle times",
+                listeners: {
+                    scope: this,
+                    select: this.updateCycleTimeParameters
+                }
+            });
+        }else if(this.dateType=='LastNWeeks'){
+            this.add({
+                xtype: 'rallytextfield',
+                fieldLabel: 'Last n months',
+                itemId: 'lastNWeeks',
+                labelAlign: 'right',
+                labelSeparator: "",
+                labelWidth: 150,
+                width: 200,
+                value: 6,
+                toolTipText: "Select the n number of weeks to calculate the cycle times",
+                listeners: {
+                    scope: this,
+                    select: this.updateCycleTimeParameters
+                }
+            });            
+        } else {
+            this.add({
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
@@ -228,12 +268,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     select: this.updateCycleTimeParameters
                 }
             }]
-        },
-        {
-            xtype: 'container',
-            flex: 1,
-            layout: 'hbox',
-            items: [{
+        });
+        }
+
+
+        this.add({
                 xtype: 'rallymultiobjectpicker',
                 modelType: 'Project',
                 fieldLabel: 'Projects',
@@ -249,24 +288,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     select: this.updateCycleTimeParameters
                 }
             }
-            // ,{
-            //     xtype: 'rallytextfield',
-            //     fieldLabel: 'Last n months',
-            //     itemId: 'lastNMonths',
-            //     labelAlign: 'right',
-            //     labelSeparator: "",
-            //     labelWidth: 10,
-            //     width: 165,
-            //     value: 6,
-            //     toolTipText: "Select the n number of months to calculate the cycle times",
-            //     listeners: {
-            //         scope: this,
-            //         select: this.updateCycleTimeParameters
-            //     }
-            //}
-            ]
-        });
-
+        );
 
 
         this.down('#cb-fromState').on('select', this._updateToState, this);
@@ -353,12 +375,31 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             cycleEndState = this._getToStateCombo() && this._getToStateCombo().getValue() || null,
             showReady = this.down('#btReady') && this.down('#btReady').pressed || false,
             showBlocked = this.down('#btBlocked') && this.down('#btBlocked').pressed || false,
-            cycleEndRangeStart = this.down('#dtFrom') && this.down('#dtFrom').getValue() || null,
-            cycleEndRangeTo = this.down('#dtTo') && this.down('#dtTo').getValue() || null,
             states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
             projects = this.down('#selectedProjects') && this.down('#selectedProjects').selectedValues.keys || [];
-            lastNMonths = this.down('#lastNMonths') && this.down('#lastNMonths').value || 1;
 
+            var cycleEndRangeStart,cycleEndRangeTo;
+            var date = new Date();
+
+            if(this.dateType == "LastNWeeks"){
+                var lastNWeeks = this.down('#lastNWeeks') && this.down('#lastNWeeks').value || 1;
+                //calcualte weeks
+                cycleEndRangeTo = new Date(date.getFullYear(), date.getMonth(), 1);
+                cycleEndRangeStart = Ext.Date.subtract(cycleEndRangeTo, Ext.Date.MONTH, lastNWeeks);               
+            }else if (this.dateType == "LastNMonths") {
+                var lastNMonths = this.down('#lastNMonths') && this.down('#lastNMonths').value || 1;
+
+                //calculate months
+                cycleEndRangeTo = new Date(date.getFullYear(), date.getMonth(), 1);
+                cycleEndRangeStart = Ext.Date.subtract(cycleEndRangeTo, Ext.Date.MONTH, lastNMonths);   
+            } else{
+                //Sun Oct 01 2017 00:00:00 GMT-0700 (PDT)
+                cycleEndRangeStart = this.down('#dtFrom') && this.down('#dtFrom').getValue() || null;
+                cycleEndRangeTo = this.down('#dtTo') && this.down('#dtTo').getValue() || null;
+            }
+
+            
+            console.log('cycleEndRangeStart,cycleEndRangeTo >>', cycleEndRangeStart,cycleEndRangeTo);
         states = Ext.Array.map(states, function(r) {
             //if (r.get('value') !== CArABU.technicalservices.CycleTimeCalculator.creationDateText) {
                 return r.get('value');
@@ -379,6 +420,12 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             lastNMonths: lastNMonths
         };
     },
+
+    calculateLastNWeeks:function(lastNWeeks){
+
+
+    },
+
     updateCycleTimeParameters: function(){
         this.saveState();
         if (this.hasValidCycleTimeParameters()){
