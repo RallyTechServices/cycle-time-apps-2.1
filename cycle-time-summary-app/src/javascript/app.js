@@ -32,7 +32,7 @@
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
-            exportLimit: 1000
+            exportLimit: 10000
         }
     },
     exportDateFormat: 'm/d/Y h:i:s',
@@ -98,6 +98,7 @@
             xtype: 'cycletimepickerbutton',
             modelNames: this.getModelNames(),
             context: this.getContext(),
+            dateType : this.getSetting('dateType'),
             margin: '3 9 0 0',
             listeners: {
                 cycletimepickerready: this.addCycleTimePanel,
@@ -349,20 +350,34 @@
         })
 //(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
+        
 
         Ext.Object.each(cycle_time_summary,function(key,value){
-            value.AvgLeadTime = Ext.Number.toFixed(value.LeadTime / value.TotalArtifacts,2);
-            value.AvgBlockTime = Ext.Number.toFixed(value.BlockTime / value.TotalArtifacts,2);
-            value.AvgReadyTime = Ext.Number.toFixed(value.ReadyTime / value.TotalArtifacts,2);
-            value.AvgReadyQueueTime = Ext.Number.toFixed(value.ReadyQueueTime / value.TotalArtifacts,2);
-            value.AvgCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime,2);
-            value.AvgActiveCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime,2);
+            value.AvgLeadTime = value.LeadTime / value.TotalArtifacts;
+            value.AvgBlockTime = value.BlockTime / value.TotalArtifacts;
+            value.AvgReadyTime = value.ReadyTime / value.TotalArtifacts;
+            value.AvgReadyQueueTime = value.ReadyQueueTime / value.TotalArtifacts;
+            value.AvgCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime;
+            value.AvgActiveCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime;
             results.push(value);
         })
-        me.addSummaryGrid(results);
-        //me.addGrid(records);
-        me.addChart(results);
 
+         var store = Ext.create('Rally.data.custom.Store',{
+             data: results
+         });
+
+         me.overallSummaryData = {};
+         me.overallSummaryData.Project = "Total";
+         me.overallSummaryData.AvgLeadTime = store.average('AvgLeadTime');
+         me.overallSummaryData.AvgCycleTime = store.average('AvgCycleTime');
+
+        me.addSummaryGrid(store);
+        //me.addGrid(records);
+
+        //adding the summary data to chart as well. 
+        me.results = results;
+        //console.log('haiya>>',me.overallSummaryData);
+        //me.addChart(results);
      },
 
     addChart: function(results){
@@ -375,7 +390,8 @@
     },
 
     getChartData: function(results) {
-        
+        console.log('results>>',results);
+        var me = this;
         var categories = [];
         
         var lead = [];
@@ -383,12 +399,15 @@
         var active = [];
         var ready_queue = [];
         
+        // console.log('me.overallSummaryData>>', me.overallSummaryData);
+        // results.push(me.overallSummaryData);
+
         Ext.Array.each(results, function(value){
             categories.push(value.Project);
-            lead.push(Ext.Number.from(value.AvgLeadTime,0));
-            cycle.push(Ext.Number.from(value.AvgCycleTime,0));
-            active.push(Ext.Number.from(value.AvgActiveCycleTime,0));
-            ready_queue.push(Ext.Number.from(value.AvgReadyQueueTime,0));
+            lead.push(Ext.util.Format.round(value.AvgLeadTime,2));
+            cycle.push(Ext.util.Format.round(value.AvgCycleTime,2));
+            // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
+            // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
         });
         
         
@@ -414,7 +433,7 @@
             },
             yAxis: {
                 min: 0,
-                    title: {
+                title: {
                     text: me.getSetting('granularity')//'Days'
                 }
             },
@@ -431,26 +450,108 @@
         };
     },     
 
-     addSummaryGrid: function(results){
-         this.logger.log('addSummaryGrid',results, results.length);
+     addSummaryGrid: function(store){
+        var me = this;
+         //this.logger.log('addSummaryGrid',results, results.length);
          this.suspendLayouts();
-         var store = Ext.create('Rally.data.custom.Store',{
-             data: results
-         });
 
-         this.getGridBox().add({
+        this.getGridBox().add({
              xtype: 'rallygrid',
              store: store,
              columnCfgs: this.getSummaryColumnCfgs(),
              showPagingToolbar: true,
              scroll: 'vertical',
+             bodyPadding:10,
+             showRowActionsColumn:false,
             features: [{
                 ftype: 'summary'
             }],
+            viewConfig: {
+                listeners: {
+                    refresh: function(gridview) {
+                        console.log(gridview);
+                        console.log('is fully loaded',gridview);
+                        me.results.push({"Project":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
+                        me.addChart(me.results);
+                    }
+                },
+                scope:me
+            },            
             ptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and projects selected.</div></div>'
          });
          this.resumeLayouts(true);
      },
+
+
+    _export: function(){
+        var me = this;
+        if ( !me.results ) { return; }
+        
+        var filename = Ext.String.format('summary_export.csv');
+        me._create_csv(me.results);
+
+        Rally.technicalservices.FileUtilities.saveCSVToFile(me.CSV,filename);
+    },
+
+    _create_csv: function(results){
+        var me = this;
+        if ( !results ) { return; }
+        
+        me.setLoading("Generating CSV");
+
+        var CSV = "";    
+        var row = "";
+        // Add the column headers
+        var grid_columns = me.getSummaryColumnCfgs();
+        var columns = [];
+        Ext.Array.each(grid_columns,function(col){
+            row += col.text.replace("<BR>","") + ',';
+            columns.push(col.dataIndex);
+        });
+
+        CSV += row + '\r\n';
+
+        //Write the totals row.
+        row = "";
+
+        CSV += row + '\r\n';
+        // Loop through tasks hash and create the csv 
+        Ext.Array.each(me.results,function(task){
+            row = "";
+            Ext.Array.each(columns,function(col){
+                row += task[col] ? task[col] + ',':',';
+            },me)
+            CSV += row + '\r\n';
+
+            if(task.children && task.children.length > 0){
+                Ext.Array.each(task.children,function(child){
+                    row = "";
+                    Ext.Array.each(columns,function(col){
+                        row += child[col] ? child[col] + ',':',';
+                    },me)
+                    CSV += row + '\r\n';
+
+                    if(child.children && child.children.length > 0){
+                        Ext.Array.each(child.children,function(gchild){
+                            row = "";
+                            Ext.Array.each(columns,function(col){
+                                if(col == "Name" || col == "WorkProduct"){
+                                    row += gchild[col] ? '"' + gchild[col].replace(/"/g, '""') + '"' + ',':',';
+                                }else{
+                                    row += gchild[col] ? gchild[col] + ',':',';
+                                }
+                            },me)
+                            CSV += row + '\r\n';                             
+                        });
+                    }
+                },me);
+            }
+        },me);
+
+        me.CSV = CSV;
+        me.setLoading(false);
+    },
+
 
      // addGrid: function(records){
      //     //this.logger.log('addGrid',records, records.length);
@@ -836,7 +937,9 @@
         return columns;
     },
 
-    getSummaryColumnCfgs: function(model){
+    getSummaryColumnCfgs: function(){
+        var me = this;
+        me.overallSummaryData = {"Project":"Total"};
         var columns = [{
             dataIndex: 'Project',
             text:'Project',
@@ -849,35 +952,87 @@
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
             summaryType: 'average',
-            summaryRenderer: function(value, summaryData, dataIndex) {
-                console.log('summaryData', summaryData,value);
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
                 return value; 
+            },            
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                me.overallSummaryData.AvgLeadTime = value;
+                return Ext.Number.toFixed(value,2); 
             }
         },
         {
             dataIndex: 'AvgReadyQueueTime',
             text:'Avg. Ready Queue Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgCycleTime',
             text:'Avg. Cycle Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                me.overallSummaryData.AvgCycleTime = value;                
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgActiveCycleTime',
             text:'Avg. Active Cycle Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgBlockTime',
             text:'Avg. Block Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgReadyTime',
             text:'Avg. Ready to Pull Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         }
 
         ];
@@ -887,31 +1042,31 @@
     },
 
 
-    _export: function(){
-        var grid = this.down('rallygrid');
-        var me = this;
+    // _export: function(){
+    //     var grid = this.down('rallygrid');
+    //     var me = this;
 
-        if ( !grid ) { return; }
+    //     if ( !grid ) { return; }
         
-        this.logger.log('_export',grid);
+    //     this.logger.log('_export',grid);
 
-        var filename = Ext.String.format('export.csv');
+    //     var filename = Ext.String.format('export.csv');
 
-        this.setLoading("Generating CSV");
-        Deft.Chain.sequence([
-            function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
-        ]).then({
-            scope: this,
-            success: function(csv){
-                if (csv && csv.length > 0){
-                    Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
-                } else {
-                    Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
-                }
+    //     this.setLoading("Generating CSV");
+    //     Deft.Chain.sequence([
+    //         function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
+    //     ]).then({
+    //         scope: this,
+    //         success: function(csv){
+    //             if (csv && csv.length > 0){
+    //                 Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
+    //             } else {
+    //                 Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
+    //             }
                 
-            }
-        }).always(function() { me.setLoading(false); });
-    },
+    //         }
+    //     }).always(function() { me.setLoading(false); });
+    // },
 
 
     exportData: function(includeTimestamps, includeSummary){
@@ -1127,7 +1282,7 @@
         return this.down('#grid_box');
     },
     getSettingsFields: function(){
-        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getModelNames());
+        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getSettings());
     },
     getOptions: function() {
         return [

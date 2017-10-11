@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Oct 09 2017 22:29:29 GMT-0700 (PDT) -->
+    <!--  Build Date: Tue Oct 10 2017 21:41:54 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Oct 09 2017 22:29:29 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Tue Oct 10 2017 21:41:54 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 343085735408;
+        var CHECKSUM = 386617515333;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1044,6 +1044,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
     stateId: 'cycleTimePanel',
     stateEvents: ['expand', 'collapse', 'parametersupdated'],
     text: '',
+    dateType:'',
 
     config: {
         context: undefined,
@@ -1179,6 +1180,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
                 modelNames: this.modelNames,
                 models: this.models,
                 context: this.context,
+                dateType: this.dateType,
                 flex: 1
             });
             this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
@@ -1399,6 +1401,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     animCollapse: false,
     stateful: true,
     stateId: 'cycleTimePanel',
+    dateType:'',
 
     constructor: function(config) {
         this.mergeConfig(config);
@@ -1579,8 +1582,47 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     scope: this,
                     select: this.updateCycleTimeParameters
                 }
-        },
-        {
+        });
+
+
+
+
+
+
+        if(this.dateType == 'LastNMonths'){
+            this.add({
+                xtype: 'rallytextfield',
+                fieldLabel: 'Last n Months',
+                itemId: 'lastNMonths',
+                labelAlign: 'right',
+                labelSeparator: "",
+                labelWidth: 150,
+                width: 200,
+                value: 6,
+                toolTipText: "Select the n number of months to calculate the cycle times",
+                listeners: {
+                    scope: this,
+                    select: this.updateCycleTimeParameters
+                }
+            });
+        }else if(this.dateType=='LastNWeeks'){
+            this.add({
+                xtype: 'rallytextfield',
+                fieldLabel: 'Last n months',
+                itemId: 'lastNWeeks',
+                labelAlign: 'right',
+                labelSeparator: "",
+                labelWidth: 150,
+                width: 200,
+                value: 6,
+                toolTipText: "Select the n number of weeks to calculate the cycle times",
+                listeners: {
+                    scope: this,
+                    select: this.updateCycleTimeParameters
+                }
+            });            
+        } else {
+            this.add({
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
@@ -1614,12 +1656,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     select: this.updateCycleTimeParameters
                 }
             }]
-        },
-        {
-            xtype: 'container',
-            flex: 1,
-            layout: 'hbox',
-            items: [{
+        });
+        }
+
+
+        this.add({
                 xtype: 'rallymultiobjectpicker',
                 modelType: 'Project',
                 fieldLabel: 'Projects',
@@ -1635,24 +1676,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     select: this.updateCycleTimeParameters
                 }
             }
-            // ,{
-            //     xtype: 'rallytextfield',
-            //     fieldLabel: 'Last n months',
-            //     itemId: 'lastNMonths',
-            //     labelAlign: 'right',
-            //     labelSeparator: "",
-            //     labelWidth: 10,
-            //     width: 165,
-            //     value: 6,
-            //     toolTipText: "Select the n number of months to calculate the cycle times",
-            //     listeners: {
-            //         scope: this,
-            //         select: this.updateCycleTimeParameters
-            //     }
-            //}
-            ]
-        });
-
+        );
 
 
         this.down('#cb-fromState').on('select', this._updateToState, this);
@@ -1739,12 +1763,31 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             cycleEndState = this._getToStateCombo() && this._getToStateCombo().getValue() || null,
             showReady = this.down('#btReady') && this.down('#btReady').pressed || false,
             showBlocked = this.down('#btBlocked') && this.down('#btBlocked').pressed || false,
-            cycleEndRangeStart = this.down('#dtFrom') && this.down('#dtFrom').getValue() || null,
-            cycleEndRangeTo = this.down('#dtTo') && this.down('#dtTo').getValue() || null,
             states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
             projects = this.down('#selectedProjects') && this.down('#selectedProjects').selectedValues.keys || [];
-            lastNMonths = this.down('#lastNMonths') && this.down('#lastNMonths').value || 1;
 
+            var cycleEndRangeStart,cycleEndRangeTo;
+            var date = new Date();
+
+            if(this.dateType == "LastNWeeks"){
+                var lastNWeeks = this.down('#lastNWeeks') && this.down('#lastNWeeks').value || 1;
+                //calcualte weeks
+                cycleEndRangeTo = new Date(date.getFullYear(), date.getMonth(), 1);
+                cycleEndRangeStart = Ext.Date.subtract(cycleEndRangeTo, Ext.Date.MONTH, lastNWeeks);               
+            }else if (this.dateType == "LastNMonths") {
+                var lastNMonths = this.down('#lastNMonths') && this.down('#lastNMonths').value || 1;
+
+                //calculate months
+                cycleEndRangeTo = new Date(date.getFullYear(), date.getMonth(), 1);
+                cycleEndRangeStart = Ext.Date.subtract(cycleEndRangeTo, Ext.Date.MONTH, lastNMonths);   
+            } else{
+                //Sun Oct 01 2017 00:00:00 GMT-0700 (PDT)
+                cycleEndRangeStart = this.down('#dtFrom') && this.down('#dtFrom').getValue() || null;
+                cycleEndRangeTo = this.down('#dtTo') && this.down('#dtTo').getValue() || null;
+            }
+
+            
+            console.log('cycleEndRangeStart,cycleEndRangeTo >>', cycleEndRangeStart,cycleEndRangeTo);
         states = Ext.Array.map(states, function(r) {
             //if (r.get('value') !== CArABU.technicalservices.CycleTimeCalculator.creationDateText) {
                 return r.get('value');
@@ -1765,6 +1808,12 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             lastNMonths: lastNMonths
         };
     },
+
+    calculateLastNWeeks:function(lastNWeeks){
+
+
+    },
+
     updateCycleTimeParameters: function(){
         this.saveState();
         if (this.hasValidCycleTimeParameters()){
@@ -2271,7 +2320,7 @@ Ext.override(Rally.ui.grid.TreeGrid, {
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
-    getFields: function(modelNames){
+    getFields: function(settings){
         // var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
         //     includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
@@ -2287,6 +2336,10 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         //     value: 'HierarchicalRequirement'
         // }];
         // filters = Rally.data.wsapi.Filter.or(filters);
+        current_date_type = (settings && settings.dateType) || 'DateRange',
+
+        console.log('settings>>',settings);
+
         var types = Ext.create('Ext.data.Store', {
             fields: ['name'],
             data : [
@@ -2305,7 +2358,8 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'right',
             labelWidth: 100,
             valueField: 'name',
-            displayField: 'name'
+            displayField: 'name',
+            value: settings.artifactType
         },{
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
@@ -2313,8 +2367,64 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'right',
             labelWidth: 100,
             minValue: 10,
-            maxValue: 10000
-        },{
+            maxValue: 10000,
+            value: settings.exportLimit
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Date Type',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Date Range",
+                name: 'dateType',
+                inputValue: "DateRange"
+                ,
+                checked: "DateRange" === current_date_type
+            }, {
+                boxLabel: "Last N Weeks",
+                name: 'dateType',
+                inputValue: "LastNWeeks"
+                ,
+                checked: "LastNWeeks" === current_date_type
+            }, {
+                boxLabel: "Last N Months",
+                name: 'dateType',
+                inputValue: "LastNMonths"
+                ,
+                checked: "LastNMonths" === current_date_type
+            }]
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Granularity',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            width:300,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Day",
+                name: 'granularity',
+                inputValue: "day"
+                ,
+                checked: "day" === settings.granularity
+            }, {
+                boxLabel: "Minute",
+                name: 'granularity',
+                inputValue: "minute"
+                ,
+                checked: "minute" === settings.granularity
+            }]
+                }
+
+        ,{
             xtype: 'textarea',
             fieldLabel: 'Query',
             name: 'queryFilter',
@@ -2519,7 +2629,7 @@ Ext.define('CA.technicalservices.Utility',{
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
-            exportLimit: 1000
+            exportLimit: 10000
         }
     },
     exportDateFormat: 'm/d/Y h:i:s',
@@ -2585,6 +2695,7 @@ Ext.define('CA.technicalservices.Utility',{
             xtype: 'cycletimepickerbutton',
             modelNames: this.getModelNames(),
             context: this.getContext(),
+            dateType : this.getSetting('dateType'),
             margin: '3 9 0 0',
             listeners: {
                 cycletimepickerready: this.addCycleTimePanel,
@@ -2836,20 +2947,34 @@ Ext.define('CA.technicalservices.Utility',{
         })
 //(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
+        
 
         Ext.Object.each(cycle_time_summary,function(key,value){
-            value.AvgLeadTime = Ext.Number.toFixed(value.LeadTime / value.TotalArtifacts,2);
-            value.AvgBlockTime = Ext.Number.toFixed(value.BlockTime / value.TotalArtifacts,2);
-            value.AvgReadyTime = Ext.Number.toFixed(value.ReadyTime / value.TotalArtifacts,2);
-            value.AvgReadyQueueTime = Ext.Number.toFixed(value.ReadyQueueTime / value.TotalArtifacts,2);
-            value.AvgCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime,2);
-            value.AvgActiveCycleTime = Ext.Number.toFixed(value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime,2);
+            value.AvgLeadTime = value.LeadTime / value.TotalArtifacts;
+            value.AvgBlockTime = value.BlockTime / value.TotalArtifacts;
+            value.AvgReadyTime = value.ReadyTime / value.TotalArtifacts;
+            value.AvgReadyQueueTime = value.ReadyQueueTime / value.TotalArtifacts;
+            value.AvgCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime;
+            value.AvgActiveCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime;
             results.push(value);
         })
-        me.addSummaryGrid(results);
-        //me.addGrid(records);
-        me.addChart(results);
 
+         var store = Ext.create('Rally.data.custom.Store',{
+             data: results
+         });
+
+         me.overallSummaryData = {};
+         me.overallSummaryData.Project = "Total";
+         me.overallSummaryData.AvgLeadTime = store.average('AvgLeadTime');
+         me.overallSummaryData.AvgCycleTime = store.average('AvgCycleTime');
+
+        me.addSummaryGrid(store);
+        //me.addGrid(records);
+
+        //adding the summary data to chart as well. 
+        me.results = results;
+        //console.log('haiya>>',me.overallSummaryData);
+        //me.addChart(results);
      },
 
     addChart: function(results){
@@ -2862,7 +2987,8 @@ Ext.define('CA.technicalservices.Utility',{
     },
 
     getChartData: function(results) {
-        
+        console.log('results>>',results);
+        var me = this;
         var categories = [];
         
         var lead = [];
@@ -2870,12 +2996,15 @@ Ext.define('CA.technicalservices.Utility',{
         var active = [];
         var ready_queue = [];
         
+        // console.log('me.overallSummaryData>>', me.overallSummaryData);
+        // results.push(me.overallSummaryData);
+
         Ext.Array.each(results, function(value){
             categories.push(value.Project);
-            lead.push(Ext.Number.from(value.AvgLeadTime,0));
-            cycle.push(Ext.Number.from(value.AvgCycleTime,0));
-            active.push(Ext.Number.from(value.AvgActiveCycleTime,0));
-            ready_queue.push(Ext.Number.from(value.AvgReadyQueueTime,0));
+            lead.push(Ext.util.Format.round(value.AvgLeadTime,2));
+            cycle.push(Ext.util.Format.round(value.AvgCycleTime,2));
+            // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
+            // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
         });
         
         
@@ -2901,7 +3030,7 @@ Ext.define('CA.technicalservices.Utility',{
             },
             yAxis: {
                 min: 0,
-                    title: {
+                title: {
                     text: me.getSetting('granularity')//'Days'
                 }
             },
@@ -2918,26 +3047,108 @@ Ext.define('CA.technicalservices.Utility',{
         };
     },     
 
-     addSummaryGrid: function(results){
-         this.logger.log('addSummaryGrid',results, results.length);
+     addSummaryGrid: function(store){
+        var me = this;
+         //this.logger.log('addSummaryGrid',results, results.length);
          this.suspendLayouts();
-         var store = Ext.create('Rally.data.custom.Store',{
-             data: results
-         });
 
-         this.getGridBox().add({
+        this.getGridBox().add({
              xtype: 'rallygrid',
              store: store,
              columnCfgs: this.getSummaryColumnCfgs(),
              showPagingToolbar: true,
              scroll: 'vertical',
+             bodyPadding:10,
+             showRowActionsColumn:false,
             features: [{
                 ftype: 'summary'
             }],
+            viewConfig: {
+                listeners: {
+                    refresh: function(gridview) {
+                        console.log(gridview);
+                        console.log('is fully loaded',gridview);
+                        me.results.push({"Project":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
+                        me.addChart(me.results);
+                    }
+                },
+                scope:me
+            },            
             ptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and projects selected.</div></div>'
          });
          this.resumeLayouts(true);
      },
+
+
+    _export: function(){
+        var me = this;
+        if ( !me.results ) { return; }
+        
+        var filename = Ext.String.format('summary_export.csv');
+        me._create_csv(me.results);
+
+        Rally.technicalservices.FileUtilities.saveCSVToFile(me.CSV,filename);
+    },
+
+    _create_csv: function(results){
+        var me = this;
+        if ( !results ) { return; }
+        
+        me.setLoading("Generating CSV");
+
+        var CSV = "";    
+        var row = "";
+        // Add the column headers
+        var grid_columns = me.getSummaryColumnCfgs();
+        var columns = [];
+        Ext.Array.each(grid_columns,function(col){
+            row += col.text.replace("<BR>","") + ',';
+            columns.push(col.dataIndex);
+        });
+
+        CSV += row + '\r\n';
+
+        //Write the totals row.
+        row = "";
+
+        CSV += row + '\r\n';
+        // Loop through tasks hash and create the csv 
+        Ext.Array.each(me.results,function(task){
+            row = "";
+            Ext.Array.each(columns,function(col){
+                row += task[col] ? task[col] + ',':',';
+            },me)
+            CSV += row + '\r\n';
+
+            if(task.children && task.children.length > 0){
+                Ext.Array.each(task.children,function(child){
+                    row = "";
+                    Ext.Array.each(columns,function(col){
+                        row += child[col] ? child[col] + ',':',';
+                    },me)
+                    CSV += row + '\r\n';
+
+                    if(child.children && child.children.length > 0){
+                        Ext.Array.each(child.children,function(gchild){
+                            row = "";
+                            Ext.Array.each(columns,function(col){
+                                if(col == "Name" || col == "WorkProduct"){
+                                    row += gchild[col] ? '"' + gchild[col].replace(/"/g, '""') + '"' + ',':',';
+                                }else{
+                                    row += gchild[col] ? gchild[col] + ',':',';
+                                }
+                            },me)
+                            CSV += row + '\r\n';                             
+                        });
+                    }
+                },me);
+            }
+        },me);
+
+        me.CSV = CSV;
+        me.setLoading(false);
+    },
+
 
      // addGrid: function(records){
      //     //this.logger.log('addGrid',records, records.length);
@@ -3323,7 +3534,9 @@ Ext.define('CA.technicalservices.Utility',{
         return columns;
     },
 
-    getSummaryColumnCfgs: function(model){
+    getSummaryColumnCfgs: function(){
+        var me = this;
+        me.overallSummaryData = {"Project":"Total"};
         var columns = [{
             dataIndex: 'Project',
             text:'Project',
@@ -3336,35 +3549,87 @@ Ext.define('CA.technicalservices.Utility',{
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
             summaryType: 'average',
-            summaryRenderer: function(value, summaryData, dataIndex) {
-                console.log('summaryData', summaryData,value);
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
                 return value; 
+            },            
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                me.overallSummaryData.AvgLeadTime = value;
+                return Ext.Number.toFixed(value,2); 
             }
         },
         {
             dataIndex: 'AvgReadyQueueTime',
             text:'Avg. Ready Queue Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgCycleTime',
             text:'Avg. Cycle Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                me.overallSummaryData.AvgCycleTime = value;                
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgActiveCycleTime',
             text:'Avg. Active Cycle Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgBlockTime',
             text:'Avg. Block Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         },
         {
             dataIndex: 'AvgReadyTime',
             text:'Avg. Ready to Pull Time',
-            summaryType: 'average'
+            summaryType: 'average',
+            renderer: function(value){
+                return Ext.Number.toFixed(value,2); 
+            },
+            exportRenderer: function(value){
+                return value; 
+            },
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return Ext.Number.toFixed(value,2); 
+            }
         }
 
         ];
@@ -3374,31 +3639,31 @@ Ext.define('CA.technicalservices.Utility',{
     },
 
 
-    _export: function(){
-        var grid = this.down('rallygrid');
-        var me = this;
+    // _export: function(){
+    //     var grid = this.down('rallygrid');
+    //     var me = this;
 
-        if ( !grid ) { return; }
+    //     if ( !grid ) { return; }
         
-        this.logger.log('_export',grid);
+    //     this.logger.log('_export',grid);
 
-        var filename = Ext.String.format('export.csv');
+    //     var filename = Ext.String.format('export.csv');
 
-        this.setLoading("Generating CSV");
-        Deft.Chain.sequence([
-            function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
-        ]).then({
-            scope: this,
-            success: function(csv){
-                if (csv && csv.length > 0){
-                    Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
-                } else {
-                    Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
-                }
+    //     this.setLoading("Generating CSV");
+    //     Deft.Chain.sequence([
+    //         function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
+    //     ]).then({
+    //         scope: this,
+    //         success: function(csv){
+    //             if (csv && csv.length > 0){
+    //                 Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
+    //             } else {
+    //                 Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
+    //             }
                 
-            }
-        }).always(function() { me.setLoading(false); });
-    },
+    //         }
+    //     }).always(function() { me.setLoading(false); });
+    // },
 
 
     exportData: function(includeTimestamps, includeSummary){
@@ -3614,7 +3879,7 @@ Ext.define('CA.technicalservices.Utility',{
         return this.down('#grid_box');
     },
     getSettingsFields: function(){
-        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getModelNames());
+        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getSettings());
     },
     getOptions: function() {
         return [
