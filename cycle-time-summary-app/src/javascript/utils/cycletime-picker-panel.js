@@ -273,13 +273,14 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
 
         this.add({
-                xtype: 'rallymultiobjectpicker',
+                xtype: 'rallymultiprojectpicker',
                 modelType: 'Project',
                 fieldLabel: 'Projects',
                 labelSeparator: "",
                 itemId: 'selectedProjects',
                 labelAlign: 'right',
-                labelWidth: 150,
+                labelWidth: 150,    
+                //emptyText: state.projects.length > 0 ? state.projects[0] + '+' + state.projects.length : 'Search Projects..', 
                 width: 300,
                 value: state.projects,
                 toolTipText: "Select the projects to calculate the cycle times",
@@ -287,7 +288,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     scope: this,
                     select: this.updateCycleTimeParameters
                 }
-            }
+            }        
         );
 
 

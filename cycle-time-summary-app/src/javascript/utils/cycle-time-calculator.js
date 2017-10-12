@@ -6,11 +6,15 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     creationDateText: "(Creation)",
     noStateText: "(No State)",
 
-    getTimeInStateData: function(snapshots, field, value, dateField){
+    getTimeInStateData: function(snapshots, field, value, dateField,readyQueueStateField, readyQueueStateValue){
         snapshots = _.sortBy(snapshots, dateField);
 
         if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
                 value = "";
+        }
+
+        if (readyQueueStateValue === CArABU.technicalservices.CycleTimeCalculator.noStateText){
+                readyQueueStateValue = "";
         }
 
         var inState = snapshots[0][field] === value,
@@ -30,14 +34,17 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             }
 
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-            if (inState && snap[field] !== value){
-                info[idx].push(thisDate);
-                idx++;
-                inState = false;
-            } else if (!inState && snap[field] === value){
-                info[idx] = [thisDate];
-                inState = true;
-            } 
+            //excluding when the field in ready queue state. 
+            if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
+                if (inState && snap[field] !== value){
+                    info[idx].push(thisDate);
+                    idx++;
+                    inState = false;
+                } else if (!inState && snap[field] === value){
+                    info[idx] = [thisDate];
+                    inState = true;
+                } 
+            }
         });
 
         //Add AccptedDate as the last value if ScheduleState is Accepted. 
