@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Oct 11 2017 17:13:23 GMT-0700 (PDT) -->
+    <!--  Build Date: Thu Oct 12 2017 08:32:52 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Oct 11 2017 17:13:23 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Thu Oct 12 2017 08:32:52 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 391404576606;
+        var CHECKSUM = 395379209771;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1669,20 +1669,31 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
 
         this.add({
-                xtype: 'rallymultiprojectpicker',
+                xtype: 'rallymultiobjectpicker',
                 modelType: 'Project',
                 fieldLabel: 'Projects',
                 labelSeparator: "",
                 itemId: 'selectedProjects',
                 labelAlign: 'right',
                 labelWidth: 150,    
-                //emptyText: state.projects.length > 0 ? state.projects[0] + '+' + state.projects.length : 'Search Projects..', 
-                width: 300,
-                value: state.projects,
+                stateful:true,
+                stateId: 'multiObjectPicer1',
+                emptyText: 'Search Projects..',
+                width: 400,
+                //value: state.projects,
                 toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    select: this.updateCycleTimeParameters
+                    select: function(picker){
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                        this.updateCycleTimeParameters();
+                    },
+                    change: function(picker){
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                    },
+                    deselect: function(picker){
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                    }              
                 }
             }        
         );
