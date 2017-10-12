@@ -792,7 +792,8 @@
                 fromState = this.getFromStateValue(),
                 toState = this.getToStateValue(),
                 stateField = this.getStateField(),
-                stateValues = this.getCycleStates();
+                stateValues = this.getCycleStates(),
+                readyQueueState = this.getReqdyQueueStateValue();
 
             this.logger.log('stateValues', stateValues);
             Ext.create('CArABU.technicalservices.CycleTimeDataStore', {
@@ -804,7 +805,8 @@
                 toState: toState,
                 startDate: this.getStartDate(),
                 endDate: this.getEndDate(),
-                projects: this.getSelectedProjectOids()
+                projects: this.getSelectedProjectOids(),
+                readyQueueState: readyQueueState
             }).load(records).then({
                 success: function (updatedRecords) {
 

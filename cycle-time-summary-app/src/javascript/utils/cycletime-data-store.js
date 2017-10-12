@@ -15,6 +15,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         this.startDate = config.startDate || null;
         this.endDate = config.endDate || null;
         this.projects = config.projects || [];
+        this.readyQueueState = config.readyQueueState;
     },
 
     load: function(records){
@@ -102,8 +103,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         }
        var timeInStateData =  {snaps: snapshots};
 
-        timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom","minute");
-        timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom","minute");
+        timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom",this.stateField,this.readyQueueState);
+        timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom",this.stateField, this.readyQueueState);
         var stateField = this.stateField;
 
         timeInStateData[stateField] = {};
