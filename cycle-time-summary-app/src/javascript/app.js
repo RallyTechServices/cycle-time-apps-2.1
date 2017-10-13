@@ -336,7 +336,8 @@
                 cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
                 cycle_time_summary[artifact.get('Project').ObjectID].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
                 cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
-                cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;                
+                cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
+                cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
             } else {
                 cycle_time_summary[artifact.get('Project').ObjectID] = {
                     "Project" : artifact.get('Project').Name,
@@ -344,7 +345,8 @@
                     "ReadyQueueTime" : Ext.Number.from(ready_queue_cycle_time.cycleTime,0),
                     "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
                     "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
-                    "TotalArtifacts" : 1
+                    "TotalArtifacts" : 1,
+                    "Records": [artifact]
                 }
             }
         })
@@ -461,6 +463,8 @@
              columnCfgs: this.getSummaryColumnCfgs(),
              showPagingToolbar: true,
              scroll: 'vertical',
+             title: 'Cycle Time Summary in (' + me.getSetting('granularity') + ')',
+             titleAlign: 'center', 
              bodyPadding:10,
              showRowActionsColumn:false,
             features: [{
@@ -473,15 +477,65 @@
                         console.log('is fully loaded',gridview);
                         me.results.push({"Project":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
                         me.addChart(me.results);
-                    }
-                },
-                scope:me
+                    },
+                    cellclick: me.showDrillDown,
+                    scope:me
+                }
             },            
             ptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and projects selected.</div></div>'
          });
          this.resumeLayouts(true);
      },
 
+
+    showDrillDown: function(view, cell, cellIndex, record) {
+        var me = this;
+        
+        console.log(view, cell, cellIndex, record);
+
+        var store = Ext.create('Rally.data.custom.Store', {
+            data: record.get('Records'),
+            pageSize: 2000
+        });
+        
+        Ext.create('Rally.ui.dialog.Dialog', {
+            id        : 'detailPopup',
+            title     : 'Records for '+record.get('Project'),
+            width     : Ext.getBody().getWidth() - 50,
+            height    : Ext.getBody().getHeight() - 50,
+            closable  : true,
+            layout    : 'border',
+            items     : [
+            {
+                xtype                : 'rallygrid',
+                region               : 'center',
+                layout               : 'fit',
+                sortableColumns      : true,
+                showRowActionsColumn : false,
+                showPagingToolbar    : false,
+                columnCfgs           : this.getDrillDownColumns(),
+                store : store
+            }]
+        }).show();
+    },
+
+    getDrillDownColumns: function() {
+        return [
+            {
+                dataIndex : 'FormattedID',
+                text: "id"
+            },
+            {
+                dataIndex : 'Name',
+                text: "Name",
+                flex: 1
+            },
+            {
+                dataIndex: 'ScheduleState',
+                text: 'Schedule State'
+            }
+        ].concat(this.getHistoricalDataColumns());;
+    },
 
     _export: function(){
         var me = this;
@@ -731,7 +785,7 @@
         return endStates;
     },
     getCurrentFetchList: function(){
-        var fetch = ['ObjectID','Project','Blocked','Ready','Name'];
+        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState'];
 
         // var fetch = Ext.Array.merge(this.getGridColumns(), ['ObjectID']);
         if (this.getStateField()){
