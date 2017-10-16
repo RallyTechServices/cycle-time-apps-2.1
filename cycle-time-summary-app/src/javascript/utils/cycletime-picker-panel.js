@@ -220,7 +220,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }else if(this.dateType=='LastNWeeks'){
             this.add({
                 xtype: 'rallytextfield',
-                fieldLabel: 'Last n months',
+                fieldLabel: 'Last n Weeks',
                 itemId: 'lastNWeeks',
                 labelAlign: 'right',
                 labelSeparator: "",
@@ -281,13 +281,19 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelAlign: 'right',
                 labelWidth: 150,    
                 stateful:true,
-                stateId: 'multiObjectPicer1',
+                stateId: 'multiObjectPicker1',
                 emptyText: 'Search Projects..',
                 width: 400,
-                //value: state.projects,
-                toolTipText: "Select the projects to calculate the cycle times",
+                value: state.projects,
+                // toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
+                    // afterrender: function(picker){
+                    //     if(state.projects.length > 0){
+                    //         picker.value = state.projects;
+                    //         picker.emptyText = picker.selectedValues.length + ' Seleted Projects';
+                    //     }
+                    // },
                     select: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
                         this.updateCycleTimeParameters();
@@ -297,7 +303,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                     },
                     deselect: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
-                    }              
+                    },
+                    blur: function(picker){
+                        picker.collapse();
+                    }             
                 }
             }        
         );
@@ -396,8 +405,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             if(this.dateType == "LastNWeeks"){
                 var lastNWeeks = this.down('#lastNWeeks') && this.down('#lastNWeeks').value || 1;
                 //calcualte weeks
-                cycleEndRangeTo = new Date(date.getFullYear(), date.getMonth(), 1);
-                cycleEndRangeStart = Ext.Date.subtract(cycleEndRangeTo, Ext.Date.MONTH, lastNWeeks);               
+                cycleEndRangeTo = Ext.Date.clearTime(Ext.Date.subtract(date,Ext.Date.DAY,(date).getDay()));
+                cycleEndRangeStart =  Ext.Date.clearTime(Ext.Date.subtract(new Date(),Ext.Date.DAY,(new Date()).getDay() + 7 * lastNWeeks ));            
             }else if (this.dateType == "LastNMonths") {
                 var lastNMonths = this.down('#lastNMonths') && this.down('#lastNMonths').value || 1;
 
