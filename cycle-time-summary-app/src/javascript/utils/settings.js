@@ -103,8 +103,31 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
                 ,
                 checked: "minute" === settings.granularity
             }]
-                }
-
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Chart Type',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            width:300,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Bar",
+                name: 'chartType',
+                inputValue: "column"
+                ,
+                checked: "column" === settings.chartType
+            }, {
+                boxLabel: "Line",
+                name: 'chartType',
+                inputValue: "line"
+                ,
+                checked: "line" === settings.chartType
+            }]
+        }
         ,{
             xtype: 'textarea',
             fieldLabel: 'Query',
