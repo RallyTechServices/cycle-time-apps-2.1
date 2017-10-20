@@ -324,9 +324,9 @@
         var results = [];
         var cycle_states = me.getCycleStates();
         var ready_queue_end_value = me.getReqdyQueueStateValue();
-        if(ready_queue_end_value == "(No State)"){
-            ready_queue_end_value = cycle_states[2]
-        }
+        // if(ready_queue_end_value == "(No State)"){
+        //     ready_queue_end_value = cycle_states[2]
+        // }
 
         if(me.getSetting('dateType') == 'LastNWeeks'){
 
@@ -946,6 +946,7 @@
     getTimeInStateColumnHeader: function(stateName){
         return Ext.String.format("Time in {0} ({1}s)", stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
+    
     getHistoricalDataColumns: function(){
 
 
