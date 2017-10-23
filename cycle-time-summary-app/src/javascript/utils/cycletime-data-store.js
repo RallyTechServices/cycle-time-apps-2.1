@@ -122,12 +122,12 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         Ext.create('Rally.data.lookback.SnapshotStore',{
             fetch: this._getFetchList(),
             filters: [
-                {
-                    property: 'ObjectID',
-                    operator: 'in',
-                    value: objectIDs
-                }
-                ,
+                // {
+                //     property: 'ObjectID',
+                //     operator: 'in',
+                //     value: objectIDs
+                // }
+                // ,
                 {
                     property: 'ScheduleState',
                     operator: '<=',

@@ -6,57 +6,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     creationDateText: "(Creation)",
     noStateText: "(No State)",
 
-    // getTimeInStateDataOld: function(snapshots, field, value, dateField,readyQueueStateField, readyQueueStateValue){
-    //     snapshots = _.sortBy(snapshots, dateField);
-
-    //     if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
-    //             value = "";
-    //     }
-
-    //     if (readyQueueStateValue === CArABU.technicalservices.CycleTimeCalculator.noStateText){
-    //             readyQueueStateValue = "";
-    //     }
-
-    //     var inState = snapshots[0][field] === value,
-    //         startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
-
-    //     var info = [],
-    //         idx = 0;
-
-    //     if (startTime){
-    //         info[idx] = [startTime]
-    //     }
-    //     var acceptedDate;
-
-    //     Ext.Array.each(snapshots, function(snap){
-    //         if(snap.ScheduleState == 'Accepted'){
-    //             acceptedDate = Rally.util.DateTime.fromIsoString(snap['AcceptedDate']);
-    //         }
-
-    //         var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-    //         //excluding when the field in ready queue state. 
-    //         if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
-    //             if (inState && snap[field] !== value){
-    //                 info[idx].push(thisDate);
-    //                 idx++;
-    //                 inState = false;
-    //             } else if (!inState && snap[field] === value){
-    //                 info[idx] = [thisDate];
-    //                 inState = true;
-    //             } 
-    //         }
-    //     });
-
-    //     //Add AccptedDate as the last value if ScheduleState is Accepted. 
-    //     if(info.length > 0 && info[info.length-1].length == 1){
-    //         info[info.length-1].push(acceptedDate);
-    //     }
-
-    //     //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
-    //     return info
-    // },
-
-
     getTimeInStateData: function(snapshots, field, value, dateField,readyQueueStateField, readyQueueStateValue){
         snapshots = _.sortBy(snapshots, dateField);
 
@@ -85,141 +34,138 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             }
 
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-            var endDate =  Rally.util.DateTime.fromIsoString(snap['_ValidTo']);
             //excluding when the field in ready queue state. 
             if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
-                if(snap[field] === value){
-                    //exclude if in Accepting and Ready for bfr devlopment state.
-                    if(!((value == 'Accepting' && snap['Ready']) || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
-                        endDate = endDate > new Date() ? new Date() : endDate;
-                        info[idx] = [thisDate,endDate];
-                        idx++;                          
-                    }
-                }
-                // if (inState && snap[field] !== value){
-                //     info[idx].push(thisDate);
-                //     idx++;
-                //     inState = false;
-                // } else if (!inState && snap[field] === value){
-                //     info[idx] = [thisDate];
-                //     inState = true;
-                // } 
+                if (inState && snap[field] !== value){
+                    info[idx].push(thisDate);
+                    idx++;
+                    inState = false;
+                } else if (!inState && snap[field] === value){
+                    info[idx] = [thisDate];
+                    inState = true;
+                } 
             }
         });
 
-        // //Add AccptedDate as the last value if ScheduleState is Accepted. 
-        // if(info.length > 0 && info[info.length-1].length == 1){
-        //     info[info.length-1].push(acceptedDate);
-        // }
+        //Add AccptedDate as the last value if ScheduleState is Accepted. 
+        if(info.length > 0 && info[info.length-1].length == 1){
+            info[info.length-1].push(acceptedDate);
+        }
 
         //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
 
 
-//(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
-    // getCycleTimeDataOld: function(snaps, field, startValue, endValue, precedence){
+    // getTimeInStateData: function(snapshots, field, value, dateField,readyQueueStateField, readyQueueStateValue){
+    //     snapshots = _.sortBy(snapshots, dateField);
 
-    //     var startIdx = -1;
-    //     precedence = _.filter(precedence, function(r){
-    //         return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
+    //     if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
+    //             value = "";
+    //     }
+
+    //     if (readyQueueStateValue === CArABU.technicalservices.CycleTimeCalculator.noStateText){
+    //             readyQueueStateValue = "";
+    //     }
+
+    //     var inState = snapshots[0][field] === value,
+    //         startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+
+    //     var info = [],
+    //         idx = 0;
+
+    //     if (startTime){
+    //         info[idx] = [startTime]
+    //     }
+    //     var acceptedDate;
+
+    //     Ext.Array.each(snapshots, function(snap){
+    //         if(snap.ScheduleState == 'Accepted'){
+    //             acceptedDate = Rally.util.DateTime.fromIsoString(snap['AcceptedDate']);
+    //         }
+
+    //         var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
+    //         var endDate =  Rally.util.DateTime.fromIsoString(snap['_ValidTo']);
+    //         //excluding when the field in ready queue state. 
+    //         if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
+    //             if(snap[field] === value){
+    //                 //exclude if in Accepting and Ready for bfr devlopment state.
+    //                 if(!((value == 'Accepting' && snap['Ready']) || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
+    //                     endDate = endDate > new Date() ? new Date() : endDate;
+    //                     info[idx] = [thisDate,endDate];
+    //                     idx++;                          
+    //                 }
+    //             }
+    //             // if (inState && snap[field] !== value){
+    //             //     info[idx].push(thisDate);
+    //             //     idx++;
+    //             //     inState = false;
+    //             // } else if (!inState && snap[field] === value){
+    //             //     info[idx] = [thisDate];
+    //             //     inState = true;
+    //             // } 
+    //         }
     //     });
 
-    //     if (!Ext.isEmpty(startValue) && startValue !== CArABU.technicalservices.CycleTimeCalculator.noStateText){  //This is in case there is no start value (which means grab the first snapshot)
-    //         startIdx = _.indexOf(precedence, startValue);
-    //     }
-    //     var endIdx = _.indexOf(precedence, endValue);
+    //     // //Add AccptedDate as the last value if ScheduleState is Accepted. 
+    //     // if(info.length > 0 && info[info.length-1].length == 1){
+    //     //     info[info.length-1].push(acceptedDate);
+    //     // }
 
-    //     //Assumes snaps are stored in ascending date order.
-    //     var startDate = null,
-    //         endDate = null;
-
-    //     var previousStateIdx = -1;
-    //     var stateIdx = -1;
-    //     var cycleTime = null;
-
-    //     if ( startIdx === -1 ) {
-    //         startDate = Rally.util.DateTime.fromIsoString(snaps[0]._ValidFrom);
-    //     }
-
-    //     Ext.each(snaps, function(snap){
-    //         var thisDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-    //         if (snap[field]){
-    //             previousStateIdx = stateIdx;
-    //             stateIdx = _.indexOf(precedence, snap[field]);
-    //         } else {
-    //             if (previousStateIdx > 0){
-    //                 stateIdx = -1;
-    //             }
-    //         }
-    //         if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1 && startDate === null){
-    //             startDate = thisDate;
-    //         }
-
-    //         if (stateIdx >= endIdx && previousStateIdx < endIdx){
-    //             endDate = thisDate;
-    //             if (startDate != null){
-    //                 cycleTime = Rally.util.DateTime.getDifference(endDate,startDate,'second');
-    //             }
-    //         }
-    //     }, this);
-
-
-    //     if (stateIdx < endIdx){
-    //         cycleTime = null;
-    //     }
-
-    //     if (cycleTime) {
-    //         cycleTime = cycleTime / CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
-    //         cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
-    //     }
-
-    //     return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
+    //     //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
+    //     return info
     // },
 
 
+//(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
     getCycleTimeData: function(snaps, field, startValue, endValue, precedence){
 
-        //findout valid states
-        var validStates = [];
-        var add = false;
-        Ext.Array.each(precedence, function(state){
-
-            if(add) {
-                validStates.push(state == CArABU.technicalservices.CycleTimeCalculator.noStateText ? "" :state);
-            }            
-            if(startValue == state){
-                add = true;
-                validStates.push(state == CArABU.technicalservices.CycleTimeCalculator.noStateText ? "" :state);
-            }
-            if(endValue == state){
-                add = false;
-            }
+        var startIdx = -1;
+        precedence = _.filter(precedence, function(r){
+            return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
         });
-        var cycleTime = 0;
-        var startDate, endDate,initalStartDate;
+
+        if (!Ext.isEmpty(startValue) && startValue !== CArABU.technicalservices.CycleTimeCalculator.noStateText){  //This is in case there is no start value (which means grab the first snapshot)
+            startIdx = _.indexOf(precedence, startValue);
+        }
+        var endIdx = _.indexOf(precedence, endValue);
+
+        //Assumes snaps are stored in ascending date order.
+        var startDate = null,
+            endDate = null;
+
+        var previousStateIdx = -1;
+        var stateIdx = -1;
+        var cycleTime = null;
+
+        if ( startIdx === -1 ) {
+            startDate = Rally.util.DateTime.fromIsoString(snaps[0]._ValidFrom);
+        }
+
         Ext.each(snaps, function(snap){
-             if (snap[field] != null  && Ext.Array.contains(validStates,snap[field])){
-                //Exclude if Accepting and Ready
-                if(!((snap[field] == 'Accepting' && snap['Ready'])  || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
-
-                    if(!startDate){
-                        initalStartDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-                    }
-                    startDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-                    if(new Date(snap._ValidTo) > new Date()){
-                        endDate = new Date();
-                    }else{
-                        endDate = Rally.util.DateTime.fromIsoString(snap._ValidTo);
-                    }
-                    
-                    cycleTime += Rally.util.DateTime.getDifference(endDate,startDate,'second');
+            var thisDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
+            if (snap[field]){
+                previousStateIdx = stateIdx;
+                stateIdx = _.indexOf(precedence, snap[field]);
+            } else {
+                if (previousStateIdx > 0){
+                    stateIdx = -1;
                 }
+            }
+            if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1 && startDate === null){
+                startDate = thisDate;
+            }
 
-             }
+            if (stateIdx >= endIdx && previousStateIdx < endIdx){
+                endDate = thisDate;
+                if (startDate != null){
+                    cycleTime = Rally.util.DateTime.getDifference(endDate,startDate,'second');
+                }
+            }
         }, this);
 
-        if (cycleTime < 1){
+
+        if (stateIdx < endIdx){
             cycleTime = null;
         }
 
@@ -228,9 +174,63 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
         }
 
-        return { cycleTime: cycleTime, endDate: endDate, startDate: initalStartDate};
-       
+        return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
     },
+
+
+    // getCycleTimeData: function(snaps, field, startValue, endValue, precedence){
+
+    //     //findout valid states
+    //     var validStates = [];
+    //     var add = false;
+    //     Ext.Array.each(precedence, function(state){
+
+    //         if(add) {
+    //             validStates.push(state == CArABU.technicalservices.CycleTimeCalculator.noStateText ? "" :state);
+    //         }            
+    //         if(startValue == state){
+    //             add = true;
+    //             validStates.push(state == CArABU.technicalservices.CycleTimeCalculator.noStateText ? "" :state);
+    //         }
+    //         if(endValue == state){
+    //             add = false;
+    //         }
+    //     });
+    //     var cycleTime = 0;
+    //     var startDate, endDate,initalStartDate;
+    //     Ext.each(snaps, function(snap){
+    //          if (snap[field] != null  && Ext.Array.contains(validStates,snap[field])){
+    //             //Exclude if Accepting and Ready
+    //             if(!((snap[field] == 'Accepting' && snap['Ready'])  || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
+
+    //                 if(!startDate){
+    //                     initalStartDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
+    //                 }
+    //                 startDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
+    //                 if(new Date(snap._ValidTo) > new Date()){
+    //                     endDate = new Date();
+    //                 }else{
+    //                     endDate = Rally.util.DateTime.fromIsoString(snap._ValidTo);
+    //                 }
+                    
+    //                 cycleTime += Rally.util.DateTime.getDifference(endDate,startDate,'second');
+    //             }
+
+    //          }
+    //     }, this);
+
+    //     if (cycleTime < 1){
+    //         cycleTime = null;
+    //     }
+
+    //     if (cycleTime) {
+    //         cycleTime = cycleTime / CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
+    //         cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
+    //     }
+
+    //     return { cycleTime: cycleTime, endDate: endDate, startDate: initalStartDate};
+       
+    // },
 
     getGranularityMultiplier: function(granularity){
         granularity = granularity.toLowerCase();
