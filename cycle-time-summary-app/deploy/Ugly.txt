@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Oct 23 2017 13:52:12 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon Oct 23 2017 15:01:17 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Oct 23 2017 13:52:12 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Mon Oct 23 2017 15:01:17 GMT-0700 (PDT)";
         var STORY    = "F361";
-        var BUILDER  = "rajan08";
-        var CHECKSUM = 201774196491;
+        var BUILDER  = "marjo60";
+        var CHECKSUM = 201774196884;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>

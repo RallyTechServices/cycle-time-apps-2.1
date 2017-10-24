@@ -123,7 +123,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             fetch: this._getFetchList(),
             filters: [
                 // {
-                //     property: 'ObjectID',
+                //     property: 'ObjectID',endValue
                 //     operator: 'in',
                 //     value: objectIDs
                 // }
