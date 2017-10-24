@@ -21,6 +21,22 @@ describe("Cycle Time Tests with Snapshots", function() {
         expect(result.cycleTime).toEqual(null);
     });
 
+    it('should calculate cycle time', function() {
+        var snaps = [
+            {   Blocked: false, FormattedID: "US3747", ObjectID: 167488920516,
+                Project: project_we_care_about, Ready: false, ScheduleState : "Not Groomed",
+                _ValidFrom : "2017-10-23T20:12:28.034Z", _ValidTo : "2017-10-24T20:12:29.034Z"
+            },
+            {   Blocked: false, FormattedID: "US3747", ObjectID: 167488920516,
+                Project: project_we_care_about, Ready: true, ScheduleState : "Defined",
+                _ValidFrom : "2017-10-24T20:12:29.034Z", _ValidTo : "2017-10-24T20:17:29.041Z"
+            }
+        ];
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        // cycleTime: , endDate: , startDate:
+        expect(result.cycleTime).toEqual(1440);
+    });
+
     it('should ignore items in the final state but missing ready', function() {
         var snaps = [
             {   Blocked: false, FormattedID: "US3747", ObjectID: 167488920516,
