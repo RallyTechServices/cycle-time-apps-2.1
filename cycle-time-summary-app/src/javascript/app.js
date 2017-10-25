@@ -352,7 +352,7 @@
             Ext.Object.each(cycle_time_summary,function(key,value){
                 Ext.Array.each(records,function(artifact){
                     if(artifact.get('AcceptedDate') && Ext.Date.between(artifact.get('AcceptedDate'), value.StartDate, value.EndDate)){
-                        var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states);
+                        var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
                         cycle_time_summary[key].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
                         cycle_time_summary[key].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
                         cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
@@ -368,7 +368,7 @@
         }else{
             // Calculate the averages for each project
             Ext.Array.each(records,function(artifact){
-                var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states);
+                var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
                 if(cycle_time_summary[artifact.get('Project').ObjectID]){
                     cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
                     cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);

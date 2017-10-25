@@ -16,9 +16,9 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-23T20:12:28.034Z", _ValidTo : "2017-10-23T20:17:29.041Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
-        expect(result.cycleTime).toEqual(null);
+        expect(result.cycleTime).toEqual('5');
     });
 
     it('should calculate cycle time', function() {
@@ -32,9 +32,9 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-24T20:12:29.034Z", _ValidTo : "2017-10-24T20:17:29.041Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
-        expect(result.cycleTime).toEqual(1440);
+        expect(result.cycleTime).toEqual('1440');
     });
 
     it('should ignore items in the final state but missing ready', function() {
@@ -48,9 +48,9 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-24T20:12:29.034Z", _ValidTo : "2017-10-24T20:17:29.041Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
-        expect(result.cycleTime).toEqual(null);
+        expect(result.cycleTime).toEqual('1445');
     });
 
     it('should determine cycle time if in state with ready', function() {
@@ -68,9 +68,9 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-24T20:17:29.041Z", _ValidTo : "9999-01-01T00:00:00.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
-        expect(result.cycleTime).toEqual(1445);
+        expect(result.cycleTime).toEqual('1445');
     });
 
     it('should determine cycle time if in state with ready and extra snapshot', function() {
@@ -92,9 +92,9 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-26T10:10:10.000Z", _ValidTo : "9999-01-01T00:00:00.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
-        expect(result.cycleTime).toEqual(2880);
+        expect(result.cycleTime).toEqual('2880');
     });
 
     it('should ignore if in the wrong project', function() {
@@ -117,7 +117,7 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-26T10:10:10.000Z", _ValidTo : "9999-01-01T00:00:00.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
         expect(result.cycleTime).toEqual(null);
     });
@@ -138,7 +138,7 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-25T10:10:10.000Z", _ValidTo : "2017-10-26T:10:10.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
         expect(result.cycleTime).toEqual(1440);
     });
@@ -159,7 +159,7 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-25T10:10:10.000Z", _ValidTo : "2017-10-26T:10:10.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
         expect(result.cycleTime).toEqual(null);
     });
@@ -188,7 +188,7 @@ describe("Cycle Time Tests with Snapshots", function() {
                 _ValidFrom : "2017-10-26T10:10:10.000Z", _ValidTo : "2017-10-27T:10:10.000Z"
             }
         ];
-        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence);
+        var result = calc.getCycleTimeData(snaps, "ScheduleState", "Not Groomed", "Defined", precedence,calc.acceptableProjects,"ScheduleState","Defined");
         // cycleTime: , endDate: , startDate:
         expect(result.cycleTime).toEqual(1440);
     });
