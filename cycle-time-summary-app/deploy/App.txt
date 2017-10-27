@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Oct 24 2017 22:54:32 GMT-0700 (PDT) -->
+    <!--  Build Date: Thu Oct 26 2017 21:00:12 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Oct 24 2017 22:54:32 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Thu Oct 26 2017 21:00:12 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 458137132202;
+        var CHECKSUM = 476059058338;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1031,7 +1031,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                     }else{
                         endDate = Rally.util.DateTime.fromIsoString(snap._ValidTo);
                     }
-                    
+                   // console.log(snap[field],snap._ValidFrom,snap._ValidTo);
                     cycleTime += Rally.util.DateTime.getDifference(endDate,startDate,'second');
                 }
 
@@ -1071,7 +1071,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         });
         timeInState = timeInState/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
 
-        return timeInState.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
+        return Ext.util.Format.round(timeInState,CArABU.technicalservices.CycleTimeCalculator.precision);
     },
     getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
 
@@ -2613,9 +2613,9 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         }];
     }
 });
-Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
+Ext.define('CArABU.technicalservices.LeadTimeTemplateColumn', {
     extend: 'Ext.grid.column.Template',
-    alias: ['widget.cycletimetemplatecolumn'],
+    alias: ['widget.leadtimetemplatecolumn'],
 
     align: 'right',
 
@@ -2644,10 +2644,12 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
                 }
 
                 if (values && values.cycleTime && values.endDate){
-                    toolTip = Ext.String.format("{0} days<br/>{1}</br>End: {2}",
-                        values.cycleTime,
-                        toolTip,
-                        Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a'));
+                    toolTip = Ext.String.format("{0}",
+                        values.cycleTime
+                        // ,
+                        // toolTip,
+                        // Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a')
+                        );
                 }
 
                 return toolTip;
@@ -2665,6 +2667,38 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
 
 
 
+Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
+    extend: 'Ext.grid.column.Template',
+    alias: ['widget.cycletimetemplatecolumn'],
+
+    align: 'right',
+
+    initComponent: function(){
+        var me = this;
+
+        Ext.QuickTips.init();
+
+        me.tpl = new Ext.XTemplate('<tpl><div style="cursor:pointer;text-align:right;">{[this.getCycleTime(values)]}</div></tpl>',{
+            getCycleTime: function(values){
+
+                var cycleTime = values && values.get('cycleTimeData') && values.get('cycleTimeData').cycleTime ;
+                var readyQueueTime = values && values.get('ReadyQueueTime') && values.get('ReadyQueueTime').cycleTime ;
+                if (cycleTime >= 0){
+                    return Ext.util.Format.round((cycleTime - readyQueueTime),2);
+                }
+                return '--';
+            }
+
+        });
+        me.hasCustomRenderer = true;
+        me.callParent(arguments);
+    },
+    defaultRenderer: function(value, meta, record) {
+        var data = Ext.apply({}, record);
+        return this.tpl.apply(data);
+    }
+});
+
 
 Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
     extend: 'Ext.grid.column.Template',
@@ -2677,31 +2711,31 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         Ext.QuickTips.init();
 
-        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCurrentIcon(values)]}{[this.getTime(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getTime(values)]}</div></tpl>',{
             stateName: me.stateName,
             dataType: me.dataType,
             stateValue: me.stateValue,
 
             getTime: function(values){
-                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,'--');
+                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,0);
             },
-            getCurrentIcon: function(values){
-                if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
-                    var iconCls = "icon-square",
-                        color = "#005eb8";
+            // getCurrentIcon: function(values){
+            //     if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
+            //         var iconCls = "icon-square",
+            //             color = "#005eb8";
 
-                    if (this.stateName === "Blocked"){
-                        iconCls = "icon-blocked";
-                        color = "#b81b10";
-                    }
-                    if (this.stateName === "Ready"){
-                        iconCls = "icon-ready";
-                        color = "#8dc63f";
-                    }
-                    return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
-                }
-                return "";
-            },
+            //         if (this.stateName === "Blocked"){
+            //             iconCls = "icon-blocked";
+            //             color = "#b81b10";
+            //         }
+            //         if (this.stateName === "Ready"){
+            //             iconCls = "icon-ready";
+            //             color = "#8dc63f";
+            //         }
+            //         return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
+            //     }
+            //     return "";
+            // },
             getTooltip: function(values){
                 var timeData = values[this.stateName];
                 if (timeData && this.stateValue){
@@ -3106,15 +3140,18 @@ Ext.define('CA.technicalservices.Utility',{
 
             Ext.Object.each(cycle_time_summary,function(key,value){
                 Ext.Array.each(records,function(artifact){
-                    if(artifact.get('AcceptedDate') && Ext.Date.between(artifact.get('AcceptedDate'), value.StartDate, value.EndDate)){
-                        var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
-                        cycle_time_summary[key].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
-                        cycle_time_summary[key].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
-                        cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
-                        cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
-                        cycle_time_summary[key].TotalArtifacts++;
-                        cycle_time_summary[key].Records.push(artifact);            
-                    }
+                if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
+                        if(artifact.get('AcceptedDate') && Ext.Date.between(artifact.get('AcceptedDate'), value.StartDate, value.EndDate)){
+                            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
+                            artifact.set('ReadyQueueTime',ready_queue_cycle_time);
+                            cycle_time_summary[key].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
+                            cycle_time_summary[key].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
+                            cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
+                            cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
+                            cycle_time_summary[key].TotalArtifacts++;
+                            cycle_time_summary[key].Records.push(artifact);            
+                        }
+                }
                 });
             });
 
@@ -3123,25 +3160,29 @@ Ext.define('CA.technicalservices.Utility',{
         }else{
             // Calculate the averages for each project
             Ext.Array.each(records,function(artifact){
-                var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
-                if(cycle_time_summary[artifact.get('Project').ObjectID]){
-                    cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
-                    cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
-                    cycle_time_summary[artifact.get('Project').ObjectID].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
-                    cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
-                    cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
-                    cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
-                } else {
-                    cycle_time_summary[artifact.get('Project').ObjectID] = {
-                        "Project" : artifact.get('Project').Name,
-                        "LeadTime" : Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0),
-                        "ReadyQueueTime" : Ext.Number.from(ready_queue_cycle_time.cycleTime,0),
-                        "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
-                        "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
-                        "TotalArtifacts" : 1,
-                        "Records": [artifact]
-                    }
+                if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
+                    var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
+                    artifact.set('ReadyQueueTime',ready_queue_cycle_time);
+                    if(cycle_time_summary[artifact.get('Project').ObjectID]){
+                        cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
+                        cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
+                        cycle_time_summary[artifact.get('Project').ObjectID].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
+                        cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
+                        cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
+                        cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
+                    } else {
+                        cycle_time_summary[artifact.get('Project').ObjectID] = {
+                            "Project" : artifact.get('Project').Name,
+                            "LeadTime" : Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0),
+                            "ReadyQueueTime" : Ext.Number.from(ready_queue_cycle_time.cycleTime,0),
+                            "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
+                            "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
+                            "TotalArtifacts" : 1,
+                            "Records": [artifact]
+                        }
+                    }                    
                 }
+
             })            
         }
 
@@ -3305,11 +3346,13 @@ Ext.define('CA.technicalservices.Utility',{
         
         Ext.create('Rally.ui.dialog.Dialog', {
             id        : 'detailPopup',
-            title     : 'Records for '+record.get('Project'),
+            title     : 'Artifacts for '+record.get('Project'),
             width     : Ext.getBody().getWidth() - 50,
             height    : Ext.getBody().getHeight() - 50,
             closable  : true,
             layout    : 'border',
+            frame : false,
+            bodyCls: 'x-panel-body-default-framed',
             items     : [
             {
                 xtype                : 'rallygrid',
@@ -3318,6 +3361,9 @@ Ext.define('CA.technicalservices.Utility',{
                 sortableColumns      : true,
                 showRowActionsColumn : false,
                 showPagingToolbar    : false,
+                // features: [{
+                //     ftype: 'summary'
+                // }],
                 columnCfgs           : this.getDrillDownColumns(),
                 store : store
             }]
@@ -3328,16 +3374,21 @@ Ext.define('CA.technicalservices.Utility',{
         return [
             {
                 dataIndex : 'FormattedID',
-                text: "id"
+                text: "id",
+                flex: 1,
+                renderer: function(m,v,r){
+                  return Ext.create('Rally.ui.renderer.template.FormattedIDTemplate').apply(r.data);
+                }                
             },
             {
                 dataIndex : 'Name',
                 text: "Name",
-                flex: 1
+                flex: 2
             },
             {
                 dataIndex: 'ScheduleState',
-                text: 'Schedule State'
+                text: 'Schedule State',
+                flex: 1
             }
         ].concat(this.getHistoricalDataColumns());;
     },
@@ -3504,10 +3555,17 @@ Ext.define('CA.technicalservices.Utility',{
             });
             cycleFilters = Rally.data.wsapi.Filter.or(cycleFilters);
 
+            //Add ready filter
+            var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
+                 property: 'Ready',
+                 value: true
+            });
+
+
             if (filters){
-                filters = filters.and(cycleFilters);
+                filters = filters.and(cycleFilters).and(ready_filter);
             } else {
-                filters = cycleFilters;
+                filters = cycleFilters.and(ready_filter);
             }
 
         }
@@ -3529,7 +3587,7 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('getWsapiArtifactFilters', filters.toString());
         return filters;
     },
-     getStartDate: function(){
+    getStartDate: function(){
         if (this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.startDate){
         //if (this.startDatePicker.getValue()){
             return this._gridConfig.cycleTimeParameters.startDate;
@@ -3690,7 +3748,7 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('updateHistoricalData', updatedRecords);
     },
     getCycleTimeColumnHeader: function(){
-        return Ext.String.format("Cycle time from {0} to {1} ({2}s)", this.getFromStateValue(), this.getToStateValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
+        return Ext.String.format("Lead time from {0} to {1} ({2}s)", this.getFromStateValue(), this.getToStateValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
     getCycleTimeStartColumnHeader: function(){
         return "Cycle Time Start Date";
@@ -3711,37 +3769,32 @@ Ext.define('CA.technicalservices.Utility',{
 
         if (fromState && toState){
             columns.push({
-                xtype: 'cycletimetemplatecolumn',
+                xtype: 'leadtimetemplatecolumn',
                 text: this.getCycleTimeColumnHeader(),
                 flex: 1
             });
         }
 
+        columns.push({
+            xtype: 'timetemplatecolumn',
+            dataType: 'timeInStateData',
+            stateName: this.getStateField(),
+            stateValue: this.getReqdyQueueStateValue(),
+            text: this.getTimeInStateColumnHeader("Ready Queue"),
+            flex: 1
+        });
 
-        if (this.getIncludeBlocked()){
-            columns.push({
-                xtype: 'timetemplatecolumn',
-                dataType: 'timeInStateData',
-                stateName: "Blocked",
-                text: this.getTimeInStateColumnHeader("Blocked"),
-                flex: 1
-            });
-        }
-        if (this.getIncludeReady()){
-            columns.push({
-                xtype: 'timetemplatecolumn',
-                dataType: 'timeInStateData',
-                stateName: 'Ready',
-                text: this.getTimeInStateColumnHeader("Ready"),
-                flex: 1
-            });
-        }
-
+        columns.push({
+            xtype: 'cycletimetemplatecolumn',
+            dataType: 'timeInStateData',
+            text: "Cycle Time",
+            flex: 1
+        });
 
         if (fromState && toState){
             Ext.Array.each( this.getCycleStates(), function(s){
 
-                if (s && s.length > 0){
+                if (s && s.length > 0 && s != this.getReqdyQueueStateValue()){
                     var header = this.getTimeInStateColumnHeader(s);
                     //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
                     //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
@@ -3749,6 +3802,11 @@ Ext.define('CA.technicalservices.Utility',{
                     columns.push({
                         xtype: 'timetemplatecolumn',
                         dataType: 'timeInStateData',
+                        // summaryType: 'sum',
+                        // summaryRenderer: function(value, summaryData, dataIndex) {
+                        //     console.log('summaryRenderer',value, summaryData, dataIndex);
+                        //     return value;
+                        // },
                         stateName: this.getStateField(),
                         stateValue: s,
                         text: header,
@@ -3759,6 +3817,27 @@ Ext.define('CA.technicalservices.Utility',{
 
             }, this);
         }
+
+        if (this.getIncludeBlocked()){
+            columns.push({
+                xtype: 'timetemplatecolumn',
+                dataType: 'timeInStateData',
+                stateName: "Blocked",
+                text: this.getTimeInStateColumnHeader("Blocked"),
+                flex: 1
+            });
+        }
+
+        if (this.getIncludeReady()){
+            columns.push({
+                xtype: 'timetemplatecolumn',
+                dataType: 'timeInStateData',
+                stateName: 'Ready',
+                text: this.getTimeInStateColumnHeader("Ready to Pull State"),
+                flex: 1
+            });
+        }
+
         this.logger.log('getHistoricalDataColumns', columns);
         return columns;
     },

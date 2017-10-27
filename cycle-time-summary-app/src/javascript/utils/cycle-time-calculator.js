@@ -199,7 +199,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                     }else{
                         endDate = Rally.util.DateTime.fromIsoString(snap._ValidTo);
                     }
-                    
+                   // console.log(snap[field],snap._ValidFrom,snap._ValidTo);
                     cycleTime += Rally.util.DateTime.getDifference(endDate,startDate,'second');
                 }
 
@@ -239,7 +239,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         });
         timeInState = timeInState/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
 
-        return timeInState.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
+        return Ext.util.Format.round(timeInState,CArABU.technicalservices.CycleTimeCalculator.precision);
     },
     getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
 
