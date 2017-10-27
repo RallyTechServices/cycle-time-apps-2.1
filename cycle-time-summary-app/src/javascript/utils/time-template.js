@@ -1,6 +1,6 @@
-Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
+Ext.define('CArABU.technicalservices.LeadTimeTemplateColumn', {
     extend: 'Ext.grid.column.Template',
-    alias: ['widget.cycletimetemplatecolumn'],
+    alias: ['widget.leadtimetemplatecolumn'],
 
     align: 'right',
 
@@ -29,10 +29,12 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
                 }
 
                 if (values && values.cycleTime && values.endDate){
-                    toolTip = Ext.String.format("{0} days<br/>{1}</br>End: {2}",
-                        values.cycleTime,
-                        toolTip,
-                        Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a'));
+                    toolTip = Ext.String.format("{0}",
+                        values.cycleTime
+                        // ,
+                        // toolTip,
+                        // Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a')
+                        );
                 }
 
                 return toolTip;
@@ -50,6 +52,38 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
 
 
 
+Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
+    extend: 'Ext.grid.column.Template',
+    alias: ['widget.cycletimetemplatecolumn'],
+
+    align: 'right',
+
+    initComponent: function(){
+        var me = this;
+
+        Ext.QuickTips.init();
+
+        me.tpl = new Ext.XTemplate('<tpl><div style="cursor:pointer;text-align:right;">{[this.getCycleTime(values)]}</div></tpl>',{
+            getCycleTime: function(values){
+
+                var cycleTime = values && values.get('cycleTimeData') && values.get('cycleTimeData').cycleTime ;
+                var readyQueueTime = values && values.get('ReadyQueueTime') && values.get('ReadyQueueTime').cycleTime ;
+                if (cycleTime >= 0){
+                    return Ext.util.Format.round((cycleTime - readyQueueTime),2);
+                }
+                return '--';
+            }
+
+        });
+        me.hasCustomRenderer = true;
+        me.callParent(arguments);
+    },
+    defaultRenderer: function(value, meta, record) {
+        var data = Ext.apply({}, record);
+        return this.tpl.apply(data);
+    }
+});
+
 
 Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
     extend: 'Ext.grid.column.Template',
@@ -62,31 +96,31 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         Ext.QuickTips.init();
 
-        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCurrentIcon(values)]}{[this.getTime(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getTime(values)]}</div></tpl>',{
             stateName: me.stateName,
             dataType: me.dataType,
             stateValue: me.stateValue,
 
             getTime: function(values){
-                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,'--');
+                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,0);
             },
-            getCurrentIcon: function(values){
-                if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
-                    var iconCls = "icon-square",
-                        color = "#005eb8";
+            // getCurrentIcon: function(values){
+            //     if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
+            //         var iconCls = "icon-square",
+            //             color = "#005eb8";
 
-                    if (this.stateName === "Blocked"){
-                        iconCls = "icon-blocked";
-                        color = "#b81b10";
-                    }
-                    if (this.stateName === "Ready"){
-                        iconCls = "icon-ready";
-                        color = "#8dc63f";
-                    }
-                    return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
-                }
-                return "";
-            },
+            //         if (this.stateName === "Blocked"){
+            //             iconCls = "icon-blocked";
+            //             color = "#b81b10";
+            //         }
+            //         if (this.stateName === "Ready"){
+            //             iconCls = "icon-ready";
+            //             color = "#8dc63f";
+            //         }
+            //         return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
+            //     }
+            //     return "";
+            // },
             getTooltip: function(values){
                 var timeData = values[this.stateName];
                 if (timeData && this.stateValue){
