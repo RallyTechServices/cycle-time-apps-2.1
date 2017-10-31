@@ -276,7 +276,7 @@
      updateGrid: function(){
 
         if(this.getSelectedProjects().length == 0){
-            this.updateMessageBox("No project selected select one or more projects to display the Summary");
+            this.updateMessageBox("No project selected select one or more projects to display the Summary",'red');
             return;
         }
 
@@ -546,7 +546,7 @@
                     refresh: function(gridview) {
                         console.log(gridview);
                         console.log('is fully loaded',gridview);
-                        me.results.push({"Project":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
+                        me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
                         me.addChart(me.results);
                     },
                     cellclick: me.showDrillDown,
