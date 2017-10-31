@@ -59,6 +59,32 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         this.removeAll();
 
+        var artifact_types = [
+                {"name":"User Story & Defect"},
+                {"name":"Feature"},
+                {"name":"Defect"}
+            ];
+        this.add({
+            xtype: 'rallycombobox',
+            itemId: 'cb-ArtifactType',
+            fieldLabel: 'Artifact Type',
+            labelAlign: 'right',
+            labelWidth: 150,
+            width: 300,
+            store: Ext.create('Rally.data.custom.Store', {data:artifact_types}),
+            valueField: 'name',
+            displayField: 'name',
+            value: this.artifactTypeValue,
+            listeners: {
+                scope: this,
+                select: function(cb){
+                    this.artifactTypeValue = cb.value;
+                    this.modelNames = this._getModelNames(cb.value);
+                    this.applyState({});
+                }
+            }                
+        });
+
         // this.add({
         //     xtype: 'rallybutton',
         //     cls: 'inline-filter-panel-close icon-cross',
@@ -71,7 +97,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         //         scope: this
         //     }
         // });
-        this.add({
+        this.add(
+        {
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
@@ -196,11 +223,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 }
         });
 
-
-
-
-
-
         if(this.dateType == 'LastNMonths'){
             this.add({
                 xtype: 'rallytextfield',
@@ -210,11 +232,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: 6,
+                value: state.lastNMonths,
                 toolTipText: "Select the n number of months to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    select: this.updateCycleTimeParameters
+                    change: this.updateCycleTimeParameters
                 }
             });
         }else if(this.dateType=='LastNWeeks'){
@@ -226,11 +248,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: 6,
+                value: state.LastNMonths,
                 toolTipText: "Select the n number of weeks to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    select: this.updateCycleTimeParameters
+                    change: this.updateCycleTimeParameters
                 }
             });            
         } else {
@@ -321,6 +343,17 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         this._updateStateDropdowns(stateFieldCb);
         this.updateCycleTimeParameters();
     },
+
+    _getModelNames: function(value){
+        if(value == "Feature"){
+            return ['PortfolioItem/Feature'];
+        }else if(value == "Defect"){
+            return ['Defect'];
+        }else{
+            return ['HierarchicalRequirement','Defect'];
+        }
+    },
+
     clear: function(){
         this._getFromStateCombo().setValue(null);
     },
@@ -331,6 +364,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
         return currentState;
     },
+    _getArtifactType: function(){
+        return this.down('#cb-ArtifactType') || null;
+    },
+
+
     _getStateFieldCombo: function(){
         return this.down('#cb-StateField') || null;
     },
@@ -390,7 +428,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         return true;
     },
     getCycleTimeParameters: function(){
-        var cycleTimeField = this._getStateFieldCombo() && this._getStateFieldCombo().getValue() || null,
+        var artifactType = this._getArtifactType() && this._getArtifactType().getValue() || null,
+            cycleTimeField = this._getStateFieldCombo() && this._getStateFieldCombo().getValue() || null,
             cycleStartState = this._getFromStateCombo() && this._getFromStateCombo().getValue() || null,
             cycleReadyQueueState = this._getReadyQueueStateCombo() && this._getReadyQueueStateCombo().getValue() || null,
             cycleEndState = this._getToStateCombo() && this._getToStateCombo().getValue() || null,
@@ -398,7 +437,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             showBlocked = this.down('#btBlocked') && this.down('#btBlocked').pressed || false,
             states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
             projects = this.down('#selectedProjects') && this.down('#selectedProjects').selectedValues.keys || [];
-
+            modelNames = this.modelNames || [];
             var cycleEndRangeStart,cycleEndRangeTo;
             var date = new Date();
 
@@ -428,6 +467,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         states = _.uniq(states);
 
         return {
+            artifactType: artifactType,
             cycleStateField: cycleTimeField,
             cycleStartState: cycleStartState,
             cycleReadyQueueState: cycleReadyQueueState,
@@ -438,7 +478,9 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             endDate: cycleEndRangeTo,
             cycleStates: states,
             projects: projects,
-            lastNMonths: lastNMonths
+            lastNMonths: lastNMonths,
+            lastNWeeks: lastNWeeks,
+            modelNames: modelNames
         };
     },
 

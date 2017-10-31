@@ -21,27 +21,29 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
 
         console.log('settings>>',settings);
 
-        var types = Ext.create('Ext.data.Store', {
-            fields: ['name'],
-            data : [
-                {"name":"User Story & Defect"},
-                {"name":"Feature"}
-            ]
-        });
+        // var types = Ext.create('Ext.data.Store', {
+        //     fields: ['name'],
+        //     data : [
+        //         {"name":"User Story & Defect"},
+        //         {"name":"Feature"}
+        //     ]
+        // });
 
-        return [{
-            xtype: 'combobox',
-            name: 'artifactType',
-            store: types,
-            fieldLabel: 'Artifact Type',
-            queryMode: 'local',            
-            allowBlank: false,
-            labelAlign: 'right',
-            labelWidth: 100,
-            valueField: 'name',
-            displayField: 'name',
-            value: settings.artifactType
-        },{
+        return [
+        // {
+        //     xtype: 'combobox',
+        //     name: 'artifactType',
+        //     store: types,
+        //     fieldLabel: 'Artifact Type',
+        //     queryMode: 'local',            
+        //     allowBlank: false,
+        //     labelAlign: 'right',
+        //     labelWidth: 100,
+        //     valueField: 'name',
+        //     displayField: 'name',
+        //     value: settings.artifactType
+        // },
+        {
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
             name: 'exportLimit',

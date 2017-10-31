@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Thu Oct 26 2017 21:00:12 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon Oct 30 2017 22:51:27 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Thu Oct 26 2017 21:00:12 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Mon Oct 30 2017 22:51:27 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 476059058338;
+        var CHECKSUM = 494217922389;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1561,6 +1561,32 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         this.removeAll();
 
+        var artifact_types = [
+                {"name":"User Story & Defect"},
+                {"name":"Feature"},
+                {"name":"Defect"}
+            ];
+        this.add({
+            xtype: 'rallycombobox',
+            itemId: 'cb-ArtifactType',
+            fieldLabel: 'Artifact Type',
+            labelAlign: 'right',
+            labelWidth: 150,
+            width: 300,
+            store: Ext.create('Rally.data.custom.Store', {data:artifact_types}),
+            valueField: 'name',
+            displayField: 'name',
+            value: this.artifactTypeValue,
+            listeners: {
+                scope: this,
+                select: function(cb){
+                    this.artifactTypeValue = cb.value;
+                    this.modelNames = this._getModelNames(cb.value);
+                    this.applyState({});
+                }
+            }                
+        });
+
         // this.add({
         //     xtype: 'rallybutton',
         //     cls: 'inline-filter-panel-close icon-cross',
@@ -1573,7 +1599,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         //         scope: this
         //     }
         // });
-        this.add({
+        this.add(
+        {
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
@@ -1698,11 +1725,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 }
         });
 
-
-
-
-
-
         if(this.dateType == 'LastNMonths'){
             this.add({
                 xtype: 'rallytextfield',
@@ -1712,11 +1734,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: 6,
+                value: state.lastNMonths,
                 toolTipText: "Select the n number of months to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    select: this.updateCycleTimeParameters
+                    change: this.updateCycleTimeParameters
                 }
             });
         }else if(this.dateType=='LastNWeeks'){
@@ -1728,11 +1750,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: 6,
+                value: state.LastNMonths,
                 toolTipText: "Select the n number of weeks to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    select: this.updateCycleTimeParameters
+                    change: this.updateCycleTimeParameters
                 }
             });            
         } else {
@@ -1823,6 +1845,17 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         this._updateStateDropdowns(stateFieldCb);
         this.updateCycleTimeParameters();
     },
+
+    _getModelNames: function(value){
+        if(value == "Feature"){
+            return ['PortfolioItem/Feature'];
+        }else if(value == "Defect"){
+            return ['Defect'];
+        }else{
+            return ['HierarchicalRequirement','Defect'];
+        }
+    },
+
     clear: function(){
         this._getFromStateCombo().setValue(null);
     },
@@ -1833,6 +1866,11 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
         return currentState;
     },
+    _getArtifactType: function(){
+        return this.down('#cb-ArtifactType') || null;
+    },
+
+
     _getStateFieldCombo: function(){
         return this.down('#cb-StateField') || null;
     },
@@ -1892,7 +1930,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         return true;
     },
     getCycleTimeParameters: function(){
-        var cycleTimeField = this._getStateFieldCombo() && this._getStateFieldCombo().getValue() || null,
+        var artifactType = this._getArtifactType() && this._getArtifactType().getValue() || null,
+            cycleTimeField = this._getStateFieldCombo() && this._getStateFieldCombo().getValue() || null,
             cycleStartState = this._getFromStateCombo() && this._getFromStateCombo().getValue() || null,
             cycleReadyQueueState = this._getReadyQueueStateCombo() && this._getReadyQueueStateCombo().getValue() || null,
             cycleEndState = this._getToStateCombo() && this._getToStateCombo().getValue() || null,
@@ -1900,7 +1939,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             showBlocked = this.down('#btBlocked') && this.down('#btBlocked').pressed || false,
             states = this.down('#cb-fromState') && this.down('#cb-fromState').getStore().getRange() || [];
             projects = this.down('#selectedProjects') && this.down('#selectedProjects').selectedValues.keys || [];
-
+            modelNames = this.modelNames || [];
             var cycleEndRangeStart,cycleEndRangeTo;
             var date = new Date();
 
@@ -1930,6 +1969,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         states = _.uniq(states);
 
         return {
+            artifactType: artifactType,
             cycleStateField: cycleTimeField,
             cycleStartState: cycleStartState,
             cycleReadyQueueState: cycleReadyQueueState,
@@ -1940,7 +1980,9 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             endDate: cycleEndRangeTo,
             cycleStates: states,
             projects: projects,
-            lastNMonths: lastNMonths
+            lastNMonths: lastNMonths,
+            lastNWeeks: lastNWeeks,
+            modelNames: modelNames
         };
     },
 
@@ -2475,27 +2517,29 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
 
         console.log('settings>>',settings);
 
-        var types = Ext.create('Ext.data.Store', {
-            fields: ['name'],
-            data : [
-                {"name":"User Story & Defect"},
-                {"name":"Feature"}
-            ]
-        });
+        // var types = Ext.create('Ext.data.Store', {
+        //     fields: ['name'],
+        //     data : [
+        //         {"name":"User Story & Defect"},
+        //         {"name":"Feature"}
+        //     ]
+        // });
 
-        return [{
-            xtype: 'combobox',
-            name: 'artifactType',
-            store: types,
-            fieldLabel: 'Artifact Type',
-            queryMode: 'local',            
-            allowBlank: false,
-            labelAlign: 'right',
-            labelWidth: 100,
-            valueField: 'name',
-            displayField: 'name',
-            value: settings.artifactType
-        },{
+        return [
+        // {
+        //     xtype: 'combobox',
+        //     name: 'artifactType',
+        //     store: types,
+        //     fieldLabel: 'Artifact Type',
+        //     queryMode: 'local',            
+        //     allowBlank: false,
+        //     labelAlign: 'right',
+        //     labelWidth: 100,
+        //     valueField: 'name',
+        //     displayField: 'name',
+        //     value: settings.artifactType
+        // },
+        {
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
             name: 'exportLimit',
@@ -2672,7 +2716,8 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
     alias: ['widget.cycletimetemplatecolumn'],
 
     align: 'right',
-
+    sortable: true,
+    sortState: 'DESC',
     initComponent: function(){
         var me = this;
 
@@ -2690,6 +2735,7 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
             }
 
         });
+        me.sortable = true;
         me.hasCustomRenderer = true;
         me.callParent(arguments);
     },
@@ -2817,7 +2863,7 @@ Ext.define('CA.technicalservices.Utility',{
     config: {
         defaultSettings: {
           //  includeTypes:  ['HierarchicalRequirement','Defect'],
-            artifactType: 'User Story & Defect',
+            //artifactType: 'User Story & Defect',
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
@@ -3133,6 +3179,8 @@ Ext.define('CA.technicalservices.Utility',{
                     "BlockTime": 0,
                     "ReadyTime": 0,
                     "TotalArtifacts" : 0,
+                    "TotalStories":  0,
+                    "TotalDefects": 0,                    
                     "Records": []                    
                 }
                 dt = Ext.Date.add(dt,Ext.Date.DAY,7);
@@ -3149,6 +3197,8 @@ Ext.define('CA.technicalservices.Utility',{
                             cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
                             cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
                             cycle_time_summary[key].TotalArtifacts++;
+                            if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
+                            if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
                             cycle_time_summary[key].Records.push(artifact);            
                         }
                 }
@@ -3170,6 +3220,9 @@ Ext.define('CA.technicalservices.Utility',{
                         cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
                         cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
                         cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
+                        if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[artifact.get('Project').ObjectID].TotalStories++;
+                        if(artifact.get('_type') == 'defect') cycle_time_summary[artifact.get('Project').ObjectID].TotalDefects++;
+
                     } else {
                         cycle_time_summary[artifact.get('Project').ObjectID] = {
                             "Project" : artifact.get('Project').Name,
@@ -3178,6 +3231,8 @@ Ext.define('CA.technicalservices.Utility',{
                             "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
                             "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
                             "TotalArtifacts" : 1,
+                            "TotalStories": artifact.get('_type') == 'hierarchicalrequirement' ? 1 : 0,
+                            "TotalDefects": artifact.get('_type') == 'defect' ? 1 : 0,
                             "Records": [artifact]
                         }
                     }                    
@@ -3203,7 +3258,11 @@ Ext.define('CA.technicalservices.Utility',{
         })
 
          var store = Ext.create('Rally.data.custom.Store',{
-             data: results
+            data: results,
+            sorters: {
+                property: 'AvgCycleTime',
+                direction: 'DESC'
+            }
          });
 
          me.overallSummaryData = {};
@@ -3307,12 +3366,13 @@ Ext.define('CA.technicalservices.Utility',{
              xtype: 'rallygrid',
              store: store,
              columnCfgs: this.getSummaryColumnCfgs(),
-             showPagingToolbar: true,
+             showPagingToolbar: false,
              scroll: 'vertical',
              title: 'Cycle Time Summary in (' + me.getSetting('granularity') + ')',
              titleAlign: 'center', 
              bodyPadding:10,
              showRowActionsColumn:false,
+             sortableColumns: false,
             features: [{
                 ftype: 'summary'
             }],
@@ -3390,7 +3450,7 @@ Ext.define('CA.technicalservices.Utility',{
                 text: 'Schedule State',
                 flex: 1
             }
-        ].concat(this.getHistoricalDataColumns());;
+        ].concat(this.getHistoricalDataColumns());
     },
 
     _export: function(){
@@ -3788,7 +3848,8 @@ Ext.define('CA.technicalservices.Utility',{
             xtype: 'cycletimetemplatecolumn',
             dataType: 'timeInStateData',
             text: "Cycle Time",
-            flex: 1
+            flex: 1,
+            sortable:true
         });
 
         if (fromState && toState){
@@ -3889,6 +3950,29 @@ Ext.define('CA.technicalservices.Utility',{
             },
             flex:1
         },
+        {
+            dataIndex: 'TotalArtifacts',
+            text:'Throughput'
+            // ,
+            // renderer: function(value){
+            //     return Ext.Number.toFixed(value,2); 
+            // },
+            // exportRenderer: function(value){
+            //     return value; 
+            // },            
+            // summaryRenderer: function(value, summaryData, dataIndex) {
+            //     me.overallSummaryData.AvgLeadTime = value;
+            //     return Ext.Number.toFixed(value,2); 
+            // }
+        },        
+        {
+            dataIndex: 'TotalStories',
+            text:'User Stories'
+        },        
+        {
+            dataIndex: 'TotalDefects',
+            text:'Defects'
+        },        
         {
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
@@ -4201,20 +4285,7 @@ Ext.define('CA.technicalservices.Utility',{
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('artifactType'); //includeTypes');
-
-        //if (Ext.isString(modelNames)){
-        //    modelNames = modelNames.split(',');
-        //    return modelNames;
-        //}
-
-        if(modelNames == "Feature"){
-            return ['PortfolioItem/Feature'];
-        }else{
-            return ['HierarchicalRequirement','Defect'];
-        }
-
-        this.logger.log('getModelNames', modelNames);
+        return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.modelNames || ['HierarchicalRequirement','Defect'];
     },
     getSelectorBox: function(){
         return this.down('#selector_box');

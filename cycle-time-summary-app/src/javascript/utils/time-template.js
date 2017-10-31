@@ -57,7 +57,8 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
     alias: ['widget.cycletimetemplatecolumn'],
 
     align: 'right',
-
+    sortable: true,
+    sortState: 'DESC',
     initComponent: function(){
         var me = this;
 
@@ -75,6 +76,7 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
             }
 
         });
+        me.sortable = true;
         me.hasCustomRenderer = true;
         me.callParent(arguments);
     },
