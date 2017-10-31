@@ -85,18 +85,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             }                
         });
 
-        // this.add({
-        //     xtype: 'rallybutton',
-        //     cls: 'inline-filter-panel-close icon-cross',
-        //     height: 18,
-        //     userAction: 'Close (X) filter panel clicked',
-        //     listeners: {
-        //         click: function() {
-        //             this.collapse();
-        //         },
-        //         scope: this
-        //     }
-        // });
         this.add(
         {
             xtype: 'container',
@@ -114,33 +102,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 value: state.cycleStateField,
                 _isNotHidden: this._isCycleTimeField
             }
-            // ,{
-            //     xtype: 'rallybutton',
-            //     enableToggle: true,
-            //     itemId: 'btBlocked',
-            //     margin: '6 6 6 185',
-            //     cls: state.showBlocked ? 'primary rly-small' : 'secondary rly-small',
-            //     iconCls: 'icon-blocked',
-            //     toolTipText: "Calculate time in Blocked state",
-            //     pressed: state.showBlocked || false,
-            //     listeners: {
-            //         toggle: this._toggleButton,
-            //         scope: this
-            //     }
-            // }, {
-            //     xtype: 'rallybutton',
-            //     enableToggle: true,
-            //     itemId: 'btReady',
-            //     margin: 6,
-            //     iconCls: 'icon-ok',
-            //     cls: state.showReady ? 'primary rly-small' : 'secondary rly-small',
-            //     pressed: state.showReady || false,
-            //     toolTipText: "Calculate time in Ready state",
-            //     listeners: {
-            //         toggle: this._toggleButton,
-            //         scope: this
-            //     }
-            // }
             ]
         });
 
@@ -248,7 +209,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: state.LastNMonths,
+                value: state.lastNWeeks,
                 toolTipText: "Select the n number of weeks to calculate the cycle times",
                 listeners: {
                     scope: this,
@@ -310,12 +271,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 // toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    // afterrender: function(picker){
-                    //     if(state.projects.length > 0){
-                    //         picker.value = state.projects;
-                    //         picker.emptyText = picker.selectedValues.length + ' Seleted Projects';
-                    //     }
-                    // },
+                    // added: function(picker){
+                    //     picker.emptyText = picker.value && picker.value.length > 0 ? picker.value.length + ' Seleted Projects' : 'Search Projects..'
+                    //     this.updateCycleTimeParameters();
+                    // },                    
                     select: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
                         this.updateCycleTimeParameters();
@@ -412,9 +371,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         rqStateCombo.setDisabled(false);
         rqStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
 
-        //if (this.state && this.state.cycleEndState && toStateCombo.getValue() !== this.state.cycleEndState){
-        //    toStateCombo.setValue(this.state.cycleEndState);
-        //}
         this.updateCycleTimeParameters();
     },
     hasValidCycleTimeParameters: function(){

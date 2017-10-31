@@ -2,47 +2,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
     getFields: function(settings){
-        // var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
-        //     includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
-        // var filters = [{
-        //     property: 'TypePath',
-        //     operator: 'contains',
-        //     value: 'PortfolioItem/'
-        // },{
-        //     property: 'TypePath',
-        //     value: 'Defect'
-        // },{
-        //     property: 'TypePath',
-        //     value: 'HierarchicalRequirement'
-        // }];
-        // filters = Rally.data.wsapi.Filter.or(filters);
         current_date_type = (settings && settings.dateType) || 'DateRange',
 
         console.log('settings>>',settings);
 
-        // var types = Ext.create('Ext.data.Store', {
-        //     fields: ['name'],
-        //     data : [
-        //         {"name":"User Story & Defect"},
-        //         {"name":"Feature"}
-        //     ]
-        // });
-
         return [
-        // {
-        //     xtype: 'combobox',
-        //     name: 'artifactType',
-        //     store: types,
-        //     fieldLabel: 'Artifact Type',
-        //     queryMode: 'local',            
-        //     allowBlank: false,
-        //     labelAlign: 'right',
-        //     labelWidth: 100,
-        //     valueField: 'name',
-        //     displayField: 'name',
-        //     value: settings.artifactType
-        // },
         {
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
@@ -61,24 +26,22 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'top',
             layout: 'hbox',
             labelWidth: 100,
+            width:300,
             labelCls: 'settingsLabel',
             items: [{
                 boxLabel: "Date Range",
                 name: 'dateType',
-                inputValue: "DateRange"
-                ,
+                inputValue: "DateRange",
                 checked: "DateRange" === current_date_type
             }, {
                 boxLabel: "Last N Weeks",
                 name: 'dateType',
-                inputValue: "LastNWeeks"
-                ,
+                inputValue: "LastNWeeks",
                 checked: "LastNWeeks" === current_date_type
             }, {
                 boxLabel: "Last N Months",
                 name: 'dateType',
-                inputValue: "LastNMonths"
-                ,
+                inputValue: "LastNMonths",
                 checked: "LastNMonths" === current_date_type
             }]
         },
@@ -95,14 +58,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             items: [{
                 boxLabel: "Day",
                 name: 'granularity',
-                inputValue: "day"
-                ,
+                inputValue: "day",
                 checked: "day" === settings.granularity
             }, {
                 boxLabel: "Minute",
                 name: 'granularity',
-                inputValue: "minute"
-                ,
+                inputValue: "minute",
                 checked: "minute" === settings.granularity
             }]
         },
@@ -119,14 +80,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             items: [{
                 boxLabel: "Bar",
                 name: 'chartType',
-                inputValue: "column"
-                ,
+                inputValue: "column",
                 checked: "column" === settings.chartType
             }, {
                 boxLabel: "Line",
                 name: 'chartType',
-                inputValue: "line"
-                ,
+                inputValue: "line",
                 checked: "line" === settings.chartType
             }]
         }

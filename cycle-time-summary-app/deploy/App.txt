@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Oct 30 2017 22:51:27 GMT-0700 (PDT) -->
+    <!--  Build Date: Tue Oct 31 2017 14:52:34 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Oct 30 2017 22:51:27 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Tue Oct 31 2017 14:52:34 GMT-0700 (PDT)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 494217922389;
+        var CHECKSUM = 478749712363;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1587,18 +1587,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
             }                
         });
 
-        // this.add({
-        //     xtype: 'rallybutton',
-        //     cls: 'inline-filter-panel-close icon-cross',
-        //     height: 18,
-        //     userAction: 'Close (X) filter panel clicked',
-        //     listeners: {
-        //         click: function() {
-        //             this.collapse();
-        //         },
-        //         scope: this
-        //     }
-        // });
         this.add(
         {
             xtype: 'container',
@@ -1616,33 +1604,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 value: state.cycleStateField,
                 _isNotHidden: this._isCycleTimeField
             }
-            // ,{
-            //     xtype: 'rallybutton',
-            //     enableToggle: true,
-            //     itemId: 'btBlocked',
-            //     margin: '6 6 6 185',
-            //     cls: state.showBlocked ? 'primary rly-small' : 'secondary rly-small',
-            //     iconCls: 'icon-blocked',
-            //     toolTipText: "Calculate time in Blocked state",
-            //     pressed: state.showBlocked || false,
-            //     listeners: {
-            //         toggle: this._toggleButton,
-            //         scope: this
-            //     }
-            // }, {
-            //     xtype: 'rallybutton',
-            //     enableToggle: true,
-            //     itemId: 'btReady',
-            //     margin: 6,
-            //     iconCls: 'icon-ok',
-            //     cls: state.showReady ? 'primary rly-small' : 'secondary rly-small',
-            //     pressed: state.showReady || false,
-            //     toolTipText: "Calculate time in Ready state",
-            //     listeners: {
-            //         toggle: this._toggleButton,
-            //         scope: this
-            //     }
-            // }
             ]
         });
 
@@ -1750,7 +1711,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 labelSeparator: "",
                 labelWidth: 150,
                 width: 200,
-                value: state.LastNMonths,
+                value: state.lastNWeeks,
                 toolTipText: "Select the n number of weeks to calculate the cycle times",
                 listeners: {
                     scope: this,
@@ -1812,12 +1773,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 // toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    // afterrender: function(picker){
-                    //     if(state.projects.length > 0){
-                    //         picker.value = state.projects;
-                    //         picker.emptyText = picker.selectedValues.length + ' Seleted Projects';
-                    //     }
-                    // },
+                    // added: function(picker){
+                    //     picker.emptyText = picker.value && picker.value.length > 0 ? picker.value.length + ' Seleted Projects' : 'Search Projects..'
+                    //     this.updateCycleTimeParameters();
+                    // },                    
                     select: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
                         this.updateCycleTimeParameters();
@@ -1914,9 +1873,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         rqStateCombo.setDisabled(false);
         rqStateCombo.bindStore(Ext.create('Rally.data.custom.Store',{ data: data}));
 
-        //if (this.state && this.state.cycleEndState && toStateCombo.getValue() !== this.state.cycleEndState){
-        //    toStateCombo.setValue(this.state.cycleEndState);
-        //}
         this.updateCycleTimeParameters();
     },
     hasValidCycleTimeParameters: function(){
@@ -2498,47 +2454,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
     getFields: function(settings){
-        // var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
-        //     includeDefect = Ext.Array.contains(modelNames, 'Defect');
 
-        // var filters = [{
-        //     property: 'TypePath',
-        //     operator: 'contains',
-        //     value: 'PortfolioItem/'
-        // },{
-        //     property: 'TypePath',
-        //     value: 'Defect'
-        // },{
-        //     property: 'TypePath',
-        //     value: 'HierarchicalRequirement'
-        // }];
-        // filters = Rally.data.wsapi.Filter.or(filters);
         current_date_type = (settings && settings.dateType) || 'DateRange',
 
         console.log('settings>>',settings);
 
-        // var types = Ext.create('Ext.data.Store', {
-        //     fields: ['name'],
-        //     data : [
-        //         {"name":"User Story & Defect"},
-        //         {"name":"Feature"}
-        //     ]
-        // });
-
         return [
-        // {
-        //     xtype: 'combobox',
-        //     name: 'artifactType',
-        //     store: types,
-        //     fieldLabel: 'Artifact Type',
-        //     queryMode: 'local',            
-        //     allowBlank: false,
-        //     labelAlign: 'right',
-        //     labelWidth: 100,
-        //     valueField: 'name',
-        //     displayField: 'name',
-        //     value: settings.artifactType
-        // },
         {
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
@@ -2557,24 +2478,22 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelAlign: 'top',
             layout: 'hbox',
             labelWidth: 100,
+            width:300,
             labelCls: 'settingsLabel',
             items: [{
                 boxLabel: "Date Range",
                 name: 'dateType',
-                inputValue: "DateRange"
-                ,
+                inputValue: "DateRange",
                 checked: "DateRange" === current_date_type
             }, {
                 boxLabel: "Last N Weeks",
                 name: 'dateType',
-                inputValue: "LastNWeeks"
-                ,
+                inputValue: "LastNWeeks",
                 checked: "LastNWeeks" === current_date_type
             }, {
                 boxLabel: "Last N Months",
                 name: 'dateType',
-                inputValue: "LastNMonths"
-                ,
+                inputValue: "LastNMonths",
                 checked: "LastNMonths" === current_date_type
             }]
         },
@@ -2591,14 +2510,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             items: [{
                 boxLabel: "Day",
                 name: 'granularity',
-                inputValue: "day"
-                ,
+                inputValue: "day",
                 checked: "day" === settings.granularity
             }, {
                 boxLabel: "Minute",
                 name: 'granularity',
-                inputValue: "minute"
-                ,
+                inputValue: "minute",
                 checked: "minute" === settings.granularity
             }]
         },
@@ -2615,14 +2532,12 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             items: [{
                 boxLabel: "Bar",
                 name: 'chartType',
-                inputValue: "column"
-                ,
+                inputValue: "column",
                 checked: "column" === settings.chartType
             }, {
                 boxLabel: "Line",
                 name: 'chartType',
-                inputValue: "line"
-                ,
+                inputValue: "line",
                 checked: "line" === settings.chartType
             }]
         }
@@ -3111,7 +3026,7 @@ Ext.define('CA.technicalservices.Utility',{
      updateGrid: function(){
 
         if(this.getSelectedProjects().length == 0){
-            this.updateMessageBox("No project selected select one or more projects to display the Summary");
+            this.updateMessageBox("No project selected select one or more projects to display the Summary",'red');
             return;
         }
 
@@ -3381,7 +3296,7 @@ Ext.define('CA.technicalservices.Utility',{
                     refresh: function(gridview) {
                         console.log(gridview);
                         console.log('is fully loaded',gridview);
-                        me.results.push({"Project":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
+                        me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
                         me.addChart(me.results);
                     },
                     cellclick: me.showDrillDown,
