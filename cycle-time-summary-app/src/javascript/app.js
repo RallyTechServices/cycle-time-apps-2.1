@@ -28,7 +28,7 @@
     config: {
         defaultSettings: {
           //  includeTypes:  ['HierarchicalRequirement','Defect'],
-            artifactType: 'User Story & Defect',
+            //artifactType: 'User Story & Defect',
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
@@ -344,6 +344,8 @@
                     "BlockTime": 0,
                     "ReadyTime": 0,
                     "TotalArtifacts" : 0,
+                    "TotalStories":  0,
+                    "TotalDefects": 0,                    
                     "Records": []                    
                 }
                 dt = Ext.Date.add(dt,Ext.Date.DAY,7);
@@ -360,6 +362,8 @@
                             cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
                             cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
                             cycle_time_summary[key].TotalArtifacts++;
+                            if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
+                            if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
                             cycle_time_summary[key].Records.push(artifact);            
                         }
                 }
@@ -381,6 +385,9 @@
                         cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
                         cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
                         cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
+                        if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[artifact.get('Project').ObjectID].TotalStories++;
+                        if(artifact.get('_type') == 'defect') cycle_time_summary[artifact.get('Project').ObjectID].TotalDefects++;
+
                     } else {
                         cycle_time_summary[artifact.get('Project').ObjectID] = {
                             "Project" : artifact.get('Project').Name,
@@ -389,6 +396,8 @@
                             "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
                             "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
                             "TotalArtifacts" : 1,
+                            "TotalStories": artifact.get('_type') == 'hierarchicalrequirement' ? 1 : 0,
+                            "TotalDefects": artifact.get('_type') == 'defect' ? 1 : 0,
                             "Records": [artifact]
                         }
                     }                    
@@ -414,7 +423,11 @@
         })
 
          var store = Ext.create('Rally.data.custom.Store',{
-             data: results
+            data: results,
+            sorters: {
+                property: 'AvgCycleTime',
+                direction: 'DESC'
+            }
          });
 
          me.overallSummaryData = {};
@@ -518,12 +531,13 @@
              xtype: 'rallygrid',
              store: store,
              columnCfgs: this.getSummaryColumnCfgs(),
-             showPagingToolbar: true,
+             showPagingToolbar: false,
              scroll: 'vertical',
              title: 'Cycle Time Summary in (' + me.getSetting('granularity') + ')',
              titleAlign: 'center', 
              bodyPadding:10,
              showRowActionsColumn:false,
+             sortableColumns: false,
             features: [{
                 ftype: 'summary'
             }],
@@ -601,7 +615,7 @@
                 text: 'Schedule State',
                 flex: 1
             }
-        ].concat(this.getHistoricalDataColumns());;
+        ].concat(this.getHistoricalDataColumns());
     },
 
     _export: function(){
@@ -999,7 +1013,8 @@
             xtype: 'cycletimetemplatecolumn',
             dataType: 'timeInStateData',
             text: "Cycle Time",
-            flex: 1
+            flex: 1,
+            sortable:true
         });
 
         if (fromState && toState){
@@ -1100,6 +1115,29 @@
             },
             flex:1
         },
+        {
+            dataIndex: 'TotalArtifacts',
+            text:'Throughput'
+            // ,
+            // renderer: function(value){
+            //     return Ext.Number.toFixed(value,2); 
+            // },
+            // exportRenderer: function(value){
+            //     return value; 
+            // },            
+            // summaryRenderer: function(value, summaryData, dataIndex) {
+            //     me.overallSummaryData.AvgLeadTime = value;
+            //     return Ext.Number.toFixed(value,2); 
+            // }
+        },        
+        {
+            dataIndex: 'TotalStories',
+            text:'User Stories'
+        },        
+        {
+            dataIndex: 'TotalDefects',
+            text:'Defects'
+        },        
         {
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
@@ -1412,20 +1450,7 @@
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('artifactType'); //includeTypes');
-
-        //if (Ext.isString(modelNames)){
-        //    modelNames = modelNames.split(',');
-        //    return modelNames;
-        //}
-
-        if(modelNames == "Feature"){
-            return ['PortfolioItem/Feature'];
-        }else{
-            return ['HierarchicalRequirement','Defect'];
-        }
-
-        this.logger.log('getModelNames', modelNames);
+        return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.modelNames || ['HierarchicalRequirement','Defect'];
     },
     getSelectorBox: function(){
         return this.down('#selector_box');
