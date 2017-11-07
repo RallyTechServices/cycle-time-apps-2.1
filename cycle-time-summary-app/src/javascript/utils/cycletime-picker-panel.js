@@ -110,8 +110,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         if (state.cycleStates && state.cycleStates.length > 0){
             Ext.Array.each(state.cycleStates, function(s){
-                if (state.cycleStateField !== "ScheduleState"){
+                if (state.cycleStateField !== "ScheduleState" && state.cycleStateField !== "State"){
                     fromStates.push(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                }else{
+                    console.log('state.cycleStateField>>>', state && state.cycleStateField);
                 }
                 fromStates.push(s);
                 if (!state.cycleEndState || (state.cycleEndState === s) || toStates.length > 0){
@@ -268,13 +270,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 emptyText: 'Search Projects..',
                 width: 400,
                 value: state.projects,
-                // toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    // added: function(picker){
-                    //     picker.emptyText = picker.value && picker.value.length > 0 ? picker.value.length + ' Seleted Projects' : 'Search Projects..'
-                    //     this.updateCycleTimeParameters();
-                    // },                    
                     select: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
                         this.updateCycleTimeParameters();
@@ -515,7 +512,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         var model = cb.model;
 
         var data = [];
-        if (cb.getValue() !== "ScheduleState"){
+        if (cb.getValue() !== "ScheduleState" && cb.getValue() !== "State"){
             data.push({value: CArABU.technicalservices.CycleTimeCalculator.noStateText });
         }
         model.getField(cb.getValue()).getAllowedValueStore().load({

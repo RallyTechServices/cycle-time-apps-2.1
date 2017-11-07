@@ -27,8 +27,6 @@
 
     config: {
         defaultSettings: {
-          //  includeTypes:  ['HierarchicalRequirement','Defect'],
-            //artifactType: 'User Story & Defect',
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
@@ -40,8 +38,30 @@
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addSelectors()
+       this.addSelectors();
+       // this.loadModels().then({
+       //      success: this.addSelectors(),
+       //      scope: this
+       //  });
     },
+
+    loadModels: function() {
+
+        if (this.models) {
+            return Deft.Promise.when(this.models);
+        } else {
+            return Rally.data.ModelFactory.getModels({
+                context: this.context || Rally.environment.getContext(),
+                types: this.getModelNames()
+            }).then({
+                success: function(models) {
+                    this.models = models;
+                },
+                scope: this
+            });
+        }
+    },
+
     showErrorNotification: function(msg){
         if (!msg){
             msg = "Error during execution.  See logs for details."
@@ -54,45 +74,6 @@
         this.getCycleTimeBox().removeAll();
         this.getFilterBox().removeAll();
         this.getMessageBox().update({message: this.instructions});
-
-        // var fp = this.getSelectorBox().add({
-        //     xtype: 'fieldpickerbutton',
-        //     modelNames: this.getModelNames(),
-        //     context: this.getContext(),
-        //     stateful: true,
-        //     stateId: 'grid-columns'
-        // });
-        // fp.on('fieldsupdated', this.updateGridFields, this);
-
-        // var filter = this.getSelectorBox().add({
-        //     xtype: 'rallyinlinefilterbutton',
-        //     modelNames: this.getModelNames(),
-        //     context: this.getContext(),
-        //     margin: '3 9 0 0',
-        //     stateful: true,
-        //     stateId: 'grid-filters-1',
-        //     inlineFilterPanelConfig: {
-        //         quickFilterPanelConfig: {
-        //             addQuickFilterConfig: {
-        //                 whiteListFields: ['Milestones', 'Tags']
-        //             }
-        //         },
-        //         advancedFilterPanelConfig: {
-        //             advancedFilterRowsConfig: {
-        //                 propertyFieldConfig: {
-        //                     whiteListFields: ['Milestones', 'Tags']
-        //                 }
-        //             }
-        //         }
-        //     },
-        //     listeners: {
-        //         inlinefilterready: this.addInlineFilterPanel,
-        //         inlinefilterchange: this.updateGridFilters,
-        //         scope: this
-        //     }
-        // });
-
-        //this.addCycleTimePanel();
 
         var ctButton = this.getSelectorBox().add({
             xtype: 'cycletimepickerbutton',
@@ -108,6 +89,22 @@
         });
 
         this.getSelectorBoxRight().removeAll();
+
+
+
+        // if (!this.cycleTimePanel){
+        //     this.cycleTimePanel = this.getSelectorBox().add({
+        //         xtype: 'cycletimepickerpanel',
+        //         modelNames: this.getModelNames(),
+        //         models: this.models,
+        //         context: this.getContext(),
+        //         dateType: this.getSetting('dateType'),
+        //         flex: 1
+        //     });
+        //     this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
+        //     this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        // }
+
 
         var bt = this.getSelectorBoxRight().add({
             xtype: 'rallybutton',
@@ -131,17 +128,6 @@
                 scope: this
             }
         });
-
-        // this.getSelectorBoxRight().add({
-        //     xtype: 'rallybutton',
-        //     iconCls: 'icon-help',
-        //     cls: 'help-button',
-        //     margin: '0 9 0 25',
-        //     listeners: {
-        //         click: this.showInstructionsDialog,
-        //         scope: this
-        //     }
-        // });
     },
 
      showInstructionsDialog: function(btn){
@@ -182,36 +168,7 @@
              ]
          });
      },
-    showExportMenu: function(button){
-         var menu = Ext.widget({
-             xtype: 'rallymenu',
-             items: [
-             {
-                 text: 'Export Summary...',
-                 handler: function(){
-                     this.exportData(false,true);
-                 },
-                 scope: this
-             },{
-                 text: 'Export with Timestamps...',
-                 handler: function(){
-                     this.exportData(true,false);
-                 },
-                 scope: this
-             },{
-                 text: 'Export Summary and Timestamps...',
-                 handler: function(){
-                     this.exportData(true, true);
-                 },
-                 scope: this
-             }
-            ]
-         });
-         menu.showBy(button.getEl());
-         if(button.toolTip) {
-             button.toolTip.hide();
-         }
-     },
+
     getSelectorBoxRight: function(){
          return this.down('#selector_box_right');
      },
@@ -258,6 +215,7 @@
         this.logger.log('updateCycleTimeParameters',parameters.getCycleTimeParameters());
         this._gridConfig.cycleTimeParameters = parameters.getCycleTimeParameters();
         this.setUpdateButtonUpdateable(true);
+        this.getGridBox().removeAll();
     },
      calculateCycleTime: function(){
          return this.down('cycletimepickerbutton') && this.down('cycletimepickerbutton').hasValidCycleTimeParameters() || false;
@@ -345,7 +303,9 @@
                     "ReadyTime": 0,
                     "TotalArtifacts" : 0,
                     "TotalStories":  0,
-                    "TotalDefects": 0,                    
+                    "TotalDefects": 0,
+                    "TotalP1Defects":0,
+                    "TotalP2Defects":0,                  
                     "Records": []                    
                 }
                 dt = Ext.Date.add(dt,Ext.Date.DAY,7);
@@ -364,6 +324,8 @@
                             cycle_time_summary[key].TotalArtifacts++;
                             if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
                             if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
+                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[key].TotalP1Defects++;
+                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[key].TotalP2Defects++;
                             cycle_time_summary[key].Records.push(artifact);            
                         }
                 }
@@ -387,7 +349,8 @@
                         cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
                         if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[artifact.get('Project').ObjectID].TotalStories++;
                         if(artifact.get('_type') == 'defect') cycle_time_summary[artifact.get('Project').ObjectID].TotalDefects++;
-
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP1Defects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP2Defects++;
                     } else {
                         cycle_time_summary[artifact.get('Project').ObjectID] = {
                             "Project" : artifact.get('Project').Name,
@@ -398,6 +361,8 @@
                             "TotalArtifacts" : 1,
                             "TotalStories": artifact.get('_type') == 'hierarchicalrequirement' ? 1 : 0,
                             "TotalDefects": artifact.get('_type') == 'defect' ? 1 : 0,
+                            "TotalP1Defects": (artifact.get('_type') == 'defect') && (artifact.get('Priority') == '1 = Mult Cust / No Workaround') ? 1 : 0,
+                            "TotalP2Defects": (artifact.get('_type') == 'defect') && (artifact.get('Priority') == '2 = Single Cust / No Workaround') ? 1 : 0,
                             "Records": [artifact]
                         }
                     }                    
@@ -405,8 +370,6 @@
 
             })            
         }
-
-
 
 //(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
@@ -422,13 +385,18 @@
             results.push(value);
         })
 
-         var store = Ext.create('Rally.data.custom.Store',{
-            data: results,
-            sorters: {
+        var store_config = {
+            data: results
+        }
+
+        if(me.getSetting('dateType') != 'LastNWeeks'){
+            store_config.sorters = {
                 property: 'AvgCycleTime',
                 direction: 'DESC'
             }
-         });
+        }
+
+        var store = Ext.create('Rally.data.custom.Store',store_config );
 
          me.overallSummaryData = {};
          if(me.getSetting('dateType') == 'LastNWeeks'){
@@ -470,14 +438,25 @@
         var cycle = [];
         var active = [];
         var ready_queue = [];
-        
-        // console.log('me.overallSummaryData>>', me.overallSummaryData);
-        // results.push(me.overallSummaryData);
 
         Ext.Array.each(results, function(value){
             categories.push(me.getSetting('dateType') == 'LastNWeeks' ? value.Week:value.Project);
-            lead.push(Ext.util.Format.round(value.AvgLeadTime,2));
-            cycle.push(Ext.util.Format.round(value.AvgCycleTime,2));
+            lead.push({
+                        y: Ext.util.Format.round(value.AvgLeadTime,2),
+                        events: {
+                          click: function() {
+                              me.showDrillDown(value);
+                          }
+                        }
+                       });
+            cycle.push({
+                        y: Ext.util.Format.round(value.AvgCycleTime,2),
+                        events: {
+                          click: function() {
+                              me.showDrillDown(value);
+                          }
+                        }
+                        });
             // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
             // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
         });
@@ -524,8 +503,7 @@
 
      addSummaryGrid: function(store){
         var me = this;
-         //this.logger.log('addSummaryGrid',results, results.length);
-         this.suspendLayouts();
+        this.suspendLayouts();
 
         this.getGridBox().add({
              xtype: 'rallygrid',
@@ -549,7 +527,9 @@
                         me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
                         me.addChart(me.results);
                     },
-                    cellclick: me.showDrillDown,
+                    cellclick: function(view, cell, cellIndex, record) {
+                        me.showDrillDown(record);
+                    },
                     scope:me
                 }
             },            
@@ -559,19 +539,19 @@
      },
 
 
-    showDrillDown: function(view, cell, cellIndex, record) {
+    showDrillDown: function(record) {
         var me = this;
         
-        console.log(view, cell, cellIndex, record);
+        console.log(record);
 
         var store = Ext.create('Rally.data.custom.Store', {
-            data: record.get('Records'),
+            data: record.Records || record.get('Records'),
             pageSize: 2000
         });
         
         Ext.create('Rally.ui.dialog.Dialog', {
             id        : 'detailPopup',
-            title     : 'Artifacts for '+record.get('Project'),
+            title     : 'Artifacts for ' + record.Project || record.get('Project'),
             width     : Ext.getBody().getWidth() - 50,
             height    : Ext.getBody().getHeight() - 50,
             closable  : true,
@@ -586,9 +566,6 @@
                 sortableColumns      : true,
                 showRowActionsColumn : false,
                 showPagingToolbar    : false,
-                // features: [{
-                //     ftype: 'summary'
-                // }],
                 columnCfgs           : this.getDrillDownColumns(),
                 store : store
             }]
@@ -596,7 +573,8 @@
     },
 
     getDrillDownColumns: function() {
-        return [
+        var me = this;
+        var cols = [
             {
                 dataIndex : 'FormattedID',
                 text: "id",
@@ -615,7 +593,16 @@
                 text: 'Schedule State',
                 flex: 1
             }
-        ].concat(this.getHistoricalDataColumns());
+        ];
+
+        if(me.getArtifactType() == 'Defect'){
+            cols.push({
+                dataIndex: 'Priority',
+                text: 'Priority',
+                flex: 1
+            });
+        }
+        return cols.concat(this.getHistoricalDataColumns());
     },
 
     _export: function(){
@@ -687,29 +674,6 @@
         me.setLoading(false);
     },
 
-
-     // addGrid: function(records){
-     //     //this.logger.log('addGrid',records, records.length);
-     //     var fields = records.length > 0 && records[0].getFields() || undefined;
-
-     //     this.suspendLayouts();
-     //     var store = Ext.create('Rally.data.custom.Store',{
-     //         data: records,
-     //         fields: fields,
-     //         pageSize: 25 //records.length
-     //     });
-
-     //     this.getGridBox().add({
-     //         xtype: 'rallygrid',
-     //         store: store,
-     //         columnCfgs: this.getColumnCfgs(records[0]),
-     //         showPagingToolbar: true,
-     //         scroll: 'vertical',
-     //         emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
-     //     });
-     //     this.resumeLayouts(true);
-     // },
-
      fetchWsapiArtifactData: function(){
          var deferred = Ext.create('Deft.Deferred');
          Ext.create('Rally.data.wsapi.artifact.Store',{
@@ -730,10 +694,8 @@
                      var count =  operation && operation.resultSet && operation.resultSet.total;
                      this.logger.log('count', count, this.getExportLimit());
                      if (count > this.getExportLimit()){
-                         //this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} can be fetched for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
                         deferred.resolve(null);
                      } else {
-                         //this.updateMessageBox(Ext.String.format('{0} current records found.', count));
                          deferred.resolve(records);
                      }
 
@@ -748,6 +710,7 @@
      },
 
     getWsapiArtifactFilters: function(){
+        var me = this;
         var filters = this._gridConfig && this._gridConfig.filters && this._gridConfig.filters.filters[0] || null;
         if (this.getQueryFilter()){
             if (filters){
@@ -770,7 +733,6 @@
             }
 
             Ext.Array.each(states, function(s){
-               // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
                     cycleFilters.push({
                         property: stateFieldName,
@@ -780,17 +742,35 @@
             });
             cycleFilters = Rally.data.wsapi.Filter.or(cycleFilters);
 
-            //Add ready filter
-            var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
-                 property: 'Ready',
-                 value: true
-            });
-
-
             if (filters){
-                filters = filters.and(cycleFilters).and(ready_filter);
+                filters = filters.and(cycleFilters);
             } else {
-                filters = cycleFilters.and(ready_filter);
+                filters = cycleFilters;
+            }
+
+
+            //Add ready filter
+
+            if(me.getArtifactType() == 'Defect'){
+
+                var defect_filters  = [{
+                     property: 'State',
+                     operator: '=',
+                     value: 'Closed'
+                },{
+                     property: 'Type',
+                     operator: '!=',
+                     value: 'NLC'
+                }];
+
+                filters = filters.and(Rally.data.wsapi.Filter.and(defect_filters));
+
+            }else{
+                var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
+                     property: 'Ready',
+                     value: true
+                });
+                filters = filters.and(ready_filter);      
             }
 
         }
@@ -812,19 +792,17 @@
         this.logger.log('getWsapiArtifactFilters', filters.toString());
         return filters;
     },
+
     getStartDate: function(){
         if (this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.startDate){
-        //if (this.startDatePicker.getValue()){
             return this._gridConfig.cycleTimeParameters.startDate;
-            //return Rally.util.DateTime.toIsoString(this._gridConfig.cycleTimeParameters.startDate);
         }
         return null;
     },
+    
     getEndDate: function(){
         if (this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.endDate){
-        //if (this.endDatePicker.getValue()){
             return this._gridConfig.cycleTimeParameters.endDate;
-            //return Rally.util.DateTime.toIsoString(this._gridConfig.cycleTimeParameters.endDate);
         }
         return null;
     },
@@ -832,10 +810,7 @@
     getCycleStates: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.cycleStates || [];
     },
-    getGridColumns: function(){
-        return this.down('fieldpickerbutton') && this.down('fieldpickerbutton').getFields();
-        //return this._gridConfig && this._gridConfig.fields || [];
-    },
+
     getPreviousStates: function(endState){
        var states = this.getCycleStates(),
         // var states = this.getFromStateCombo().getStore().getRange(),
@@ -854,6 +829,7 @@
         this.logger.log('getPreviousStates', previousStates);
         return previousStates;
     },
+    
     getEndStates: function(endState){
         if (!endState){
             endState = this.getToStateValue();
@@ -873,19 +849,12 @@
         return endStates;
     },
     getCurrentFetchList: function(){
-        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate'];
+        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate','Priority'];
 
-        // var fetch = Ext.Array.merge(this.getGridColumns(), ['ObjectID']);
         if (this.getStateField()){
             Ext.Array.merge(this.getStateField(), fetch);
         }
-        // if (this.getIncludeBlocked()){
-        //     Ext.Array.merge('Blocked', fetch);
-        // }
-        // if (this.getIncludeReady()){
-        //     Ext.Array.merge(fetch, 'Ready');
-        // }
-        // this.logger.log('getCurrentFetchList', fetch);
+
         return fetch;
     },
     getShowOnlyCompletedCycles: function(){
@@ -951,9 +920,6 @@
                 readyQueueState: readyQueueState
             }).load(records).then({
                 success: function (updatedRecords) {
-
-                    //this.updateMessageBox(Ext.String.format("Displaying {0} of {1} records with relevant cycle time data.", updatedRecords.length, records.length));
-
                     deferred.resolve(updatedRecords);
                 },
                 failure: function (msg) {
@@ -1022,17 +988,9 @@
 
                 if (s && s.length > 0 && s != this.getReqdyQueueStateValue()){
                     var header = this.getTimeInStateColumnHeader(s);
-                    //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                    //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                    //}
                     columns.push({
                         xtype: 'timetemplatecolumn',
                         dataType: 'timeInStateData',
-                        // summaryType: 'sum',
-                        // summaryRenderer: function(value, summaryData, dataIndex) {
-                        //     console.log('summaryRenderer',value, summaryData, dataIndex);
-                        //     return value;
-                        // },
                         stateName: this.getStateField(),
                         stateValue: s,
                         text: header,
@@ -1118,27 +1076,30 @@
         {
             dataIndex: 'TotalArtifacts',
             text:'Throughput'
-            // ,
-            // renderer: function(value){
-            //     return Ext.Number.toFixed(value,2); 
-            // },
-            // exportRenderer: function(value){
-            //     return value; 
-            // },            
-            // summaryRenderer: function(value, summaryData, dataIndex) {
-            //     me.overallSummaryData.AvgLeadTime = value;
-            //     return Ext.Number.toFixed(value,2); 
-            // }
-        },        
-        {
-            dataIndex: 'TotalStories',
-            text:'User Stories'
-        },        
-        {
-            dataIndex: 'TotalDefects',
-            text:'Defects'
-        },        
-        {
+
+        }];
+
+        if(me.getArtifactType() == 'Defect'){
+            columns.push({
+                dataIndex: 'TotalP1Defects',
+                text:'Priority 1 Defects'
+            },        
+            {
+                dataIndex: 'TotalP2Defects',
+                text:'Priority 2 Defects'
+            });
+        }else{
+            columns.push({
+                dataIndex: 'TotalStories',
+                text:'User Stories'
+            },        
+            {
+                dataIndex: 'TotalDefects',
+                text:'Defects'
+            });
+        }
+                
+        columns.push({
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
             summaryType: 'average',
@@ -1223,176 +1184,13 @@
             summaryRenderer: function(value, summaryData, dataIndex) {
                 return Ext.Number.toFixed(value,2); 
             }
-        }
-
-        ];
+        });
 
 
         return columns;
     },
 
 
-    // _export: function(){
-    //     var grid = this.down('rallygrid');
-    //     var me = this;
-
-    //     if ( !grid ) { return; }
-        
-    //     this.logger.log('_export',grid);
-
-    //     var filename = Ext.String.format('export.csv');
-
-    //     this.setLoading("Generating CSV");
-    //     Deft.Chain.sequence([
-    //         function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
-    //     ]).then({
-    //         scope: this,
-    //         success: function(csv){
-    //             if (csv && csv.length > 0){
-    //                 Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
-    //             } else {
-    //                 Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
-    //             }
-                
-    //         }
-    //     }).always(function() { me.setLoading(false); });
-    // },
-
-
-    exportData: function(includeTimestamps, includeSummary){
-        var grid = this.down('rallygrid');
-        if (!grid){
-            this.showErrorNotification("Cannot save export becuase there is no data displapyed to export.");
-            return;
-        }
-        var totalCount= grid.getStore().getTotalCount();
-        this.logger.log('exportData', totalCount);
-
-        var store = grid.getStore();
-
-        this.getMessageBox().setLoading("Preparing Export File(s)...");
-        store.load({
-            pageSize: totalCount,
-            limit: totalCount,
-            callback: function(records, operation){
-                this.getMessageBox().setLoading(false);
-                if (operation.wasSuccessful()){
-                    var columns = this.getColumnCfgs(records && records[0]);
-                    this.saveExportFiles(records, columns, includeTimestamps, includeSummary);
-                } else {
-                    this.logger.log('Error preparing export data', operation);
-                    Rally.ui.notify.Notifier.showError('Error preparing export data:  ' + operation && operation.error && operation.error.errors.join(','));
-                }
-
-            },
-            scope: this
-        });
-    },
-    saveExportFiles: function(updatedRecords, columns, includeTimestamps, includeSummary){
-
-        if (includeSummary){
-            var filename = Ext.String.format("cycle-time-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
-                csv = this.getExportSummaryCSV(updatedRecords, columns);
-           // this.logger.log('saveExportFiles', csv, filename);
-            CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
-        }
-        if (includeTimestamps){
-            var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
-                timeStampCSV = this.getExportTimestampCSV(updatedRecords);
-           // this.logger.log('saveExportFiles', timeStampCSV);
-            CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
-        }
-    },
-    getExportTimestampCSV: function(updatedRecords){
-        return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords, this.exportDateFormat);
-    },
-    getExportSummaryCSV: function(updatedRecords, columns){
-        var standardColumns = _.filter(columns, function(c){ return c.dataIndex || null; }),
-            headers = _.map(standardColumns, function(c){ if (c.text === "ID") {return "Formatted ID"; } return c.text; }),
-            fetchList = _.map(standardColumns, function(c){ return c.dataIndex; });
-
-        this.logger.log('getExportSummaryCSV', headers, fetchList);
-        var states = this.getCycleStates(),
-            stateField = this.getStateField(),
-            includeBlocked = this.getIncludeBlocked(),
-            includeReady = this.getIncludeReady();
-
-        headers.push(this.getCycleTimeColumnHeader());
-        headers.push(this.getCycleTimeStartColumnHeader());
-        headers.push(this.getCycleTimeEndColumnHeader());
-
-        if (includeBlocked){
-            headers.push(this.getTimeInStateColumnHeader("Blocked"));
-        }
-        if (includeReady){
-            headers.push(this.getTimeInStateColumnHeader("Ready"));
-        }
-
-        Ext.Array.each(states, function(state){
-            //if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-            //    headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
-            //} else {
-                headers.push(this.getTimeInStateColumnHeader(state));
-            //}
-
-        }, this);
-
-        var csv = [headers.join(',')],
-            dateFormat = this.exportDateFormat;
-
-        for (var i = 0; i < updatedRecords.length; i++){
-            var row = [],
-                record = updatedRecords[i];
-
-            for (var j = 0; j < fetchList.length; j++){
-                var val = record.get(fetchList[j]);
-                if (Ext.isObject(val)){
-                    if (val._tagsNameArray){
-                        var newVal = [];
-                        Ext.Array.each(val._tagsNameArray, function(t){
-                            newVal.push(t.Name);
-                        });
-                        val = newVal.join(',');
-                    } else {
-                        val = val._refObjectName;
-                    }
-                }
-                row.push(val || "");
-            }
-            //CycleTime
-            var timeInStateData = record.get('timeInStateData');
-
-            row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
-
-            var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
-                endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-
-            var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
-                formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
-
-            row.push(formattedStart);
-            row.push(formattedEnd);
-
-            if (includeBlocked){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
-            }
-            if (includeReady){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null, ""));
-            }
-
-            for (var s = 0; s < states.length; s++){
-                if (timeInStateData){
-                    row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
-                } else {
-                    row.push("");
-                }
-            }
-
-            row = _.map(row, function(v){ return Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));});
-            csv.push(row.join(","));
-        }
-        return csv.join("\r\n");
-    },
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){
@@ -1419,6 +1217,9 @@
         return this.cycleTimeToState;
         //return this.down('#cb-toState');
     },
+    getArtifactType: function(){
+        return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.artifactType || null;
+    },    
     getToStateValue: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.cycleEndState || null;
     },

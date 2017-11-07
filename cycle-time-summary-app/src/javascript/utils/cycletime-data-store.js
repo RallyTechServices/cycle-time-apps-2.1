@@ -102,7 +102,6 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             return null;
         }
        var timeInStateData =  {snaps: snapshots};
-       //snapshots, field, value, dateField,projectIds, toState, readyQueueStateField, readyQueueStateValue
         timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField,this.readyQueueState);
         timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField, this.readyQueueState);
         var stateField = this.stateField;
@@ -132,12 +131,6 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     operator: '<=',
                     value: 'Accepted'
                 }
-                // ,
-                // {
-                //     property: 'Project',
-                //     operator: 'in',
-                //     value: this.projects
-                // }
             ],
             useHttpPost: this.USE_POST,
             sorters: [{
