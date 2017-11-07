@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Oct 31 2017 14:52:34 GMT-0700 (PDT) -->
+    <!--  Build Date: Tue Nov 07 2017 11:05:14 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Oct 31 2017 14:52:34 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Tue Nov 07 2017 11:05:14 GMT-0800 (PST)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 478749712363;
+        var CHECKSUM = 317315203020;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -838,57 +838,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     creationDateText: "(Creation)",
     noStateText: "(No State)",
 
-    // getTimeInStateData1: function(snapshots, field, value, dateField,readyQueueStateField, readyQueueStateValue,projectIds){
-    //     snapshots = _.sortBy(snapshots, dateField);
-
-    //     if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
-    //             value = "";
-    //     }
-
-    //     if (readyQueueStateValue === CArABU.technicalservices.CycleTimeCalculator.noStateText){
-    //             readyQueueStateValue = "";
-    //     }
-
-    //     var inState = snapshots[0][field] === value,
-    //         startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
-
-    //     var info = [],
-    //         idx = 0;
-
-    //     if (startTime){
-    //         info[idx] = [startTime]
-    //     }
-    //     var acceptedDate;
-
-    //     Ext.Array.each(snapshots, function(snap){
-    //         if(snap.ScheduleState == 'Accepted'){
-    //             acceptedDate = Rally.util.DateTime.fromIsoString(snap['AcceptedDate']);
-    //         }
-
-    //         var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-    //         //excluding when the field in ready queue state. 
-    //         if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
-    //             if (inState && snap[field] !== value){
-    //                 info[idx].push(thisDate);
-    //                 idx++;
-    //                 inState = false;
-    //             } else if (!inState && snap[field] === value){
-    //                 info[idx] = [thisDate];
-    //                 inState = true;
-    //             } 
-    //         }
-    //     });
-
-    //     //Add AccptedDate as the last value if ScheduleState is Accepted. 
-    //     if(info.length > 0 && info[info.length-1].length == 1){
-    //         info[info.length-1].push(acceptedDate);
-    //     }
-
-    //     //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
-    //     return info
-    // },
-
-
     getTimeInStateData: function(snapshots, field, value, dateField,projectIds, stateField, toState, readyQueueStateField, readyQueueStateValue){
         snapshots = _.sortBy(snapshots, dateField);
 
@@ -919,7 +868,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                 if(snap[field] === value && Ext.Array.contains(projectIds, snap.Project)){
                     //exclude if in last column and Ready for 
 
-
                     //if(!((value == 'Accepting' && snap['Ready']) || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
                     if(!(snap[stateField] == toState && snap['Ready'])){    
                         if(endDate < new Date()){
@@ -934,67 +882,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         return info
     },
-
-
-// //(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
-//     getCycleTimeData1: function(snaps, field, startValue, endValue, precedence,projectIds){
-
-//         var startIdx = -1;
-//         precedence = _.filter(precedence, function(r){
-//             return (r !== CArABU.technicalservices.CycleTimeCalculator.noStateText || r !== "");
-//         });
-
-//         if (!Ext.isEmpty(startValue) && startValue !== CArABU.technicalservices.CycleTimeCalculator.noStateText){  //This is in case there is no start value (which means grab the first snapshot)
-//             startIdx = _.indexOf(precedence, startValue);
-//         }
-//         var endIdx = _.indexOf(precedence, endValue);
-
-//         //Assumes snaps are stored in ascending date order.
-//         var startDate = null,
-//             endDate = null;
-
-//         var previousStateIdx = -1;
-//         var stateIdx = -1;
-//         var cycleTime = null;
-
-//         if ( startIdx === -1 ) {
-//             startDate = Rally.util.DateTime.fromIsoString(snaps[0]._ValidFrom);
-//         }
-
-//         Ext.each(snaps, function(snap){
-//             var thisDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-//             if (snap[field] && Ext.Array.contains(projectIds,snap.Project)){
-//                 previousStateIdx = stateIdx;
-//                 stateIdx = _.indexOf(precedence, snap[field]);
-//             } else {
-//                 if (previousStateIdx > 0){
-//                     stateIdx = -1;
-//                 }
-//             }
-//             if (stateIdx >= startIdx && previousStateIdx < startIdx && startIdx > -1 && startDate === null ){
-//                 startDate = thisDate;
-//             }
-
-//             if (stateIdx >= endIdx && previousStateIdx < endIdx){
-//                 endDate = thisDate;
-//                 if (startDate != null){
-//                     cycleTime = Rally.util.DateTime.getDifference(endDate,startDate,'second');
-//                 }
-//             }
-//         }, this);
-
-
-//         if (stateIdx < endIdx){
-//             cycleTime = null;
-//         }
-
-//         if (cycleTime) {
-//             cycleTime = cycleTime / CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
-//             cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
-//         }
-
-//         return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
-//     },
 
 
     getCycleTimeData: function(snaps, field, startValue, endValue, precedence,projectIds,stateField, toState){
@@ -1189,13 +1076,6 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         Ext.suspendLayouts();
             this.setText('');
             this._indicateNoActiveFilterPresent();
-        // if (this.hasValidCycleTimeParameters()) {
-        //     this.setText('');
-        //     this._indicateActiveFilterPresent();
-        // } else {
-        //     this.setText('');
-        //     this._indicateNoActiveFilterPresent();
-        // }
         Ext.resumeLayouts(false);
         this.fireEvent('cycletimeparametersupdated', this);
     },
@@ -1303,18 +1183,10 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         this.cycleTimePanel && this.cycleTimePanel.toggleCollapse();
     },
 
-    //_onCollapse: function() {
-    //    console.log('_onCollapse validate here?');
-    //},
-
     collapse: function() {
         this.cycleTimePanel && this.cycleTimePanel.collapse();
     },
 
-    // _onBeforeShowToolTip: function() {
-    //     var action = this.cycleTimePanel && this.cycleTimePanel.collapsed ? 'Show' : 'Hide' || "Toggle";
-    //     this.toolTip.update(Ext.String.format('{0} Cycle Time parameters', action));
-    // }
 });
 Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
@@ -1420,7 +1292,6 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
             return null;
         }
        var timeInStateData =  {snaps: snapshots};
-       //snapshots, field, value, dateField,projectIds, toState, readyQueueStateField, readyQueueStateValue
         timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField,this.readyQueueState);
         timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField, this.readyQueueState);
         var stateField = this.stateField;
@@ -1450,12 +1321,6 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     operator: '<=',
                     value: 'Accepted'
                 }
-                // ,
-                // {
-                //     property: 'Project',
-                //     operator: 'in',
-                //     value: this.projects
-                // }
             ],
             useHttpPost: this.USE_POST,
             sorters: [{
@@ -1612,8 +1477,10 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         if (state.cycleStates && state.cycleStates.length > 0){
             Ext.Array.each(state.cycleStates, function(s){
-                if (state.cycleStateField !== "ScheduleState"){
+                if (state.cycleStateField !== "ScheduleState" && state.cycleStateField !== "State"){
                     fromStates.push(CArABU.technicalservices.CycleTimeCalculator.noStateText);
+                }else{
+                    console.log('state.cycleStateField>>>', state && state.cycleStateField);
                 }
                 fromStates.push(s);
                 if (!state.cycleEndState || (state.cycleEndState === s) || toStates.length > 0){
@@ -1770,13 +1637,8 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 emptyText: 'Search Projects..',
                 width: 400,
                 value: state.projects,
-                // toolTipText: "Select the projects to calculate the cycle times",
                 listeners: {
                     scope: this,
-                    // added: function(picker){
-                    //     picker.emptyText = picker.value && picker.value.length > 0 ? picker.value.length + ' Seleted Projects' : 'Search Projects..'
-                    //     this.updateCycleTimeParameters();
-                    // },                    
                     select: function(picker){
                         picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
                         this.updateCycleTimeParameters();
@@ -2017,7 +1879,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         var model = cb.model;
 
         var data = [];
-        if (cb.getValue() !== "ScheduleState"){
+        if (cb.getValue() !== "ScheduleState" && cb.getValue() !== "State"){
             data.push({value: CArABU.technicalservices.CycleTimeCalculator.noStateText });
         }
         model.getField(cb.getValue()).getAllowedValueStore().load({
@@ -2059,397 +1921,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     }
 });
-Ext.define('CArABU.technicalservices.Exporter',{
-    singleton: true,
-
-    saveCSVToFile:function(csv,file_name,type_object){
-        if (type_object === undefined){
-            type_object = {type:'text/csv;charset=utf-8'};
-        }
-        this.saveAs(csv,file_name, type_object);
-    },
-    saveAs: function(textToWrite, fileName)
-    {
-        if (Ext.isIE9m){
-            Rally.ui.notify.Notifier.showWarning({message: "Export is not supported for IE9 and below."});
-            return;
-        }
-
-        var textFileAsBlob = null;
-        try {
-            textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
-        }
-        catch(e){
-            window.BlobBuilder = window.BlobBuilder ||
-                window.WebKitBlobBuilder ||
-                window.MozBlobBuilder ||
-                window.MSBlobBuilder;
-            if (window.BlobBuilder && e.name == 'TypeError'){
-                bb = new BlobBuilder();
-                bb.append([textToWrite]);
-                textFileAsBlob = bb.getBlob("text/plain");
-            }
-
-        }
-
-        if (!textFileAsBlob){
-            Rally.ui.notify.Notifier.showWarning({message: "Export is not supported for this browser."});
-            return;
-        }
-
-        var fileNameToSaveAs = fileName;
-
-        if (Ext.isIE10p){
-            window.navigator.msSaveOrOpenBlob(textFileAsBlob,fileNameToSaveAs); // Now the user will have the option of clicking the Save button and the Open button.
-            return;
-        }
-
-        var url = this.createObjectURL(textFileAsBlob);
-
-        if (url){
-            var downloadLink = document.createElement("a");
-            if ("download" in downloadLink){
-                downloadLink.download = fileNameToSaveAs;
-            } else {
-                //Open the file in a new tab
-                downloadLink.target = "_blank";
-            }
-
-            downloadLink.innerHTML = "Download File";
-            downloadLink.href = url;
-            if (!Ext.isChrome){
-                // Firefox requires the link to be added to the DOM
-                // before it can be clicked.
-                downloadLink.onclick = this.destroyClickedElement;
-                downloadLink.style.display = "none";
-                document.body.appendChild(downloadLink);
-            }
-            downloadLink.click();
-        } else {
-            Rally.ui.notify.Notifier.showError({message: "Export is not supported "});
-        }
-
-    },
-    createObjectURL: function ( file ) {
-        if ( window.webkitURL ) {
-            return window.webkitURL.createObjectURL( file );
-        } else if ( window.URL && window.URL.createObjectURL ) {
-            return window.URL.createObjectURL( file );
-        } else {
-            return null;
-        }
-    },
-    destroyClickedElement: function(event)
-    {
-        document.body.removeChild(event.target);
-    }
-});
-Ext.define('CA.technicalservices.FieldPicker', {
-        alias: 'widget.fieldpickerbutton',
-        extend:'Rally.ui.Button',
-        requires: [
-            'Rally.ui.popover.Popover',
-            'Rally.ui.Button',
-            'Rally.ui.picker.FieldPicker',
-            'Ext.state.Manager'
-        ],
-        toolTipConfig: {
-            html: 'Show Columns',
-            anchor: 'top'
-        },
-        iconCls: 'icon-add-column',
-
-        cls: 'field-picker-btn secondary rly-small',
-
-        alwaysSelectedValues: ['FormattedID', 'Name'], // DragAndDropRank gets added in init if Drag and Drop is enabled for the workspace in the component's context
-
-        fieldBlackList: [],
-
-        fieldPickerConfig: {},
-
-        buttonConfig: {},
-
-        modelNames: [],
-
-        rankingEnabled: false,
-
-        margin: '3 9 0 0',
-
-        //This does not show the Rank column
-
-        constructor: function (config) {
-            this.config = _.merge({}, this.config || {}, config || {});
-            this.callParent([config]);
-        },
-
-        initComponent: function() {
-
-            if (this.models){
-                this.on('click', this._createPopover, this);
-                this.callParent(arguments);
-                return;
-            }
-
-            if (this.context && this.modelNames && this.modelNames.length > 0){
-                Rally.data.ModelFactory.getModels({
-                    types: this.modelNames,
-                    context: this.context,
-                    success: function(models){
-                        console.log('models');
-                        this.models = models;
-
-                    },
-                    failure: function(failedParam){
-                        console.log('failedparam');
-                    },
-                    scope: this
-                });
-                this.on('click', this._createPopover, this);
-            } else {
-                this.iconCls = 'icon-none';
-                var msg = "Please update the CA.technicalservices.FieldPicker configuration with modelNames and context";
-                this.toolTipConfig= {
-                    html: '<div style="color:red;">' + msg + '</div>'
-                }
-                this.on('click', function(){ Rally.ui.notify.Notifier.showError({message: msg})})
-            }
-            this.callParent(arguments);
-        },
-        getFields: function(){
-            return this._fields || this.alwaysSelectedValues;
-        },
-        _getPickerConfig: function() {
-            var pickerConfig;
-            pickerConfig = _.extend({
-                value: this._fields,
-                fieldBlackList: this.fieldBlackList,
-                alwaysSelectedValues: this.alwaysSelectedValues,
-                context: this.context
-            }, this.fieldPickerConfig);
-
-            return pickerConfig;
-        },
-
-        _createPopover: function(btn) {
-            var popoverTarget = btn.getEl();
-
-            this.popover = Ext.create('Rally.ui.popover.Popover', {
-                target: popoverTarget,
-                placement: ['bottom', 'left', 'top', 'right'],
-                cls: 'field-picker-popover',
-                toFront: Ext.emptyFn,
-                buttonAlign: 'center',
-                title: this.getTitle(),
-                listeners: {
-                    destroy: function () {
-                        this.popover = null;
-                    },
-                    scope: this
-                },
-                buttons: [
-                    {
-                        xtype: "rallybutton",
-                        text: 'Apply',
-                        cls: 'field-picker-apply-btn primary rly-small',
-                        listeners: {
-                            click: function() {
-                                this._onApply(this.popover);
-                            },
-                            scope: this
-                        }
-                    },
-                    {
-                        xtype: "rallybutton",
-                        text: 'Cancel',
-                        cls: 'field-picker-cancel-btn secondary dark rly-small',
-                        listeners: {
-                            click: function() {
-                                this.popover.close();
-                            },
-                            scope: this
-                        }
-                    }
-                ],
-                items: [
-                    _.extend({
-                        xtype: 'rallyfieldpicker',
-                        cls: 'field-picker',
-                        itemId: 'fieldpicker',
-                        modelTypes: this._getModelTypes(),
-                        alwaysExpanded: true,
-                        width: 200,
-                        emptyText: 'Search',
-                        selectedTextLabel: 'Selected',
-                        availableTextLabel: 'Available',
-                        listeners: {
-                            specialkey: function(field, e) {
-                                if (e.getKey() === e.ESC) {
-                                    this.popover.close();
-                                }
-                            },
-                            scope: this
-                        }
-                    }, this._getPickerConfig())
-                ]
-            });
-        },
-
-        _getModelTypes: function() {
-            return _.pluck(this._getModels(), 'typePath');
-        },
-
-        _getModels: function() {
-            return _.reduce(this.models, function(accum, model) {
-                if (model.typePath === 'artifact') {
-                    accum = accum.concat(model.getArtifactComponentModels());
-                } else {
-                    accum.push(model);
-                }
-                return accum;
-            }, []);
-        },
-
-        getTitle: function () {
-            return 'Show Columns';
-        },
-
-        /**
-         * Update the fields displayed. In grid mode this will be the columns displayed. In board mode it will be
-         * the fields on the cards
-         *
-         * @param {String[]|Object[]} fields A list of field names to display
-         * @param {Boolean} true to suspend store load if it will be triggered elsewhere
-         */
-        updateFields: function (fields, suspendLoad) {
-            this._fields = fields;
-            if (this.popover && this.popover.down('rallyfieldpicker')) {
-                this.popover.down('rallyfieldpicker').setValue(fields.join(','));
-            }
-            this.saveState();
-        },
-        getState: function(){
-            return {
-                fields: this._fields
-            };
-        },
-        applyState: function(state){
-            if (state){
-                this._fields = state.fields;
-            }
-        },
-        _onApply: function(popover) {
-            var fieldPicker = popover.down('rallyfieldpicker'),
-                fields = _.map(fieldPicker.getValue(), function (field) {
-                    return field.get('name');
-                });
-
-            this.updateFields(fields);
-            popover.close();
-
-            this.fireEvent('fieldsupdated', fields);
-        }
-    });
-Ext.define('Rally.ui.LeftRight', {
-    alias: 'widget.rallyleftright',
-    extend: 'Ext.container.Container',
-
-    cls: 'rui-leftright',
-    defaults: {
-        xtype: 'container'
-    },
-    items: [
-        {
-            itemId: 'left',
-            cls: 'rly-left'
-        },
-        {
-            itemId: 'right',
-            cls: 'rly-right'
-        }
-    ],
-
-    getLeft: function() {
-        return this.down('#left');
-    },
-
-    getRight: function() {
-        return this.down('#right');
-    }
-});
-
-Ext.apply(Ext.data.SortTypes, {
-    asUser: function(s) {
-        if (Ext.isString(s)){
-            return s;
-        }
-        return s && s.DisplayName || s._refObjectName;
-    }
-});
-
-Ext.override(Rally.ui.grid.TreeGrid, {
-    _mergeColumnConfigs: function(newColumns, oldColumns) {
-
-        var mergedColumns= _.map(newColumns, function(newColumn) {
-            var oldColumn = _.find(oldColumns, {dataIndex: this._getColumnName(newColumn)});
-            if (oldColumn) {
-                return this._getColumnConfigFromColumn(oldColumn);
-            }
-
-            return newColumn;
-        }, this);
-
-        mergedColumns = mergedColumns.concat(this.config.derivedColumns);
-        return mergedColumns;
-    },
-    _getColumnConfigsBasedOnCurrentOrder: function(columnConfigs) {
-        var cols = _(this.headerCt.items.getRange()).map(function(column) {
-            //override:  Added additional search for column.text
-            return _.contains(columnConfigs, column.dataIndex) ? column.dataIndex : _.find(columnConfigs, {xtype: column.xtype, text: column.text });
-        }).compact().value();
-
-        return cols;
-    },
-    _restoreColumnOrder: function(columnConfigs) {
-
-        var currentColumns = this._getColumnConfigsBasedOnCurrentOrder(columnConfigs);
-        var addedColumns = _.filter(columnConfigs, function(config) {
-            if (Ext.isString(config)){
-                return true;
-            }
-            if (!_.find(currentColumns, {dataIndex: config.dataIndex})){
-                return true;
-            }
-
-            if (!_.find(currentColumns, {text: config.text})){
-                    return true;
-            }
-
-            return false;
-        });
-
-        console.log('added columns', addedColumns, columnConfigs, currentColumns);
-
-        return currentColumns.concat(addedColumns);
-    },
-    _applyStatefulColumns: function(columns) {
-        if (this.alwaysShowDefaultColumns) {
-            _.each(this.columnCfgs, function(columnCfg) {
-                if (!_.any(columns, {dataIndex: this._getColumnName(columnCfg)})) {
-                    columns.push(columnCfg);
-                }
-            }, this);
-        }
-
-        if (this.config && this.config.derivedColumns){
-            this.columnCfgs = columns.concat(this.config.derivedColumns);
-        } else {
-            this.columnCfgs = columns;
-        }
-
-    }
-});
-
-
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
@@ -2605,10 +2076,7 @@ Ext.define('CArABU.technicalservices.LeadTimeTemplateColumn', {
                 if (values && values.cycleTime && values.endDate){
                     toolTip = Ext.String.format("{0}",
                         values.cycleTime
-                        // ,
-                        // toolTip,
-                        // Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a')
-                        );
+                    );
                 }
 
                 return toolTip;
@@ -2680,23 +2148,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             getTime: function(values){
                 return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,0);
             },
-            // getCurrentIcon: function(values){
-            //     if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
-            //         var iconCls = "icon-square",
-            //             color = "#005eb8";
 
-            //         if (this.stateName === "Blocked"){
-            //             iconCls = "icon-blocked";
-            //             color = "#b81b10";
-            //         }
-            //         if (this.stateName === "Ready"){
-            //             iconCls = "icon-ready";
-            //             color = "#8dc63f";
-            //         }
-            //         return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
-            //     }
-            //     return "";
-            // },
             getTooltip: function(values){
                 var timeData = values[this.stateName];
                 if (timeData && this.stateValue){
@@ -2727,9 +2179,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
         me.hasCustomRenderer = true;
         me.callParent(arguments);
     },
-    //getValue: function(){
-    //    return values[this.costField] || 0;
-    //},
+
     defaultRenderer: function(value, meta, record) {
         var data = Ext.apply({}, record.get(this.dataType));
         data.currentValue = record.get(this.stateName);
@@ -2739,15 +2189,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 });
 
 
-Ext.define('CA.technicalservices.Utility',{
-    singleton: true,
-    loadModels: function(modelNames, context){
-        return Rally.data.ModelFactory.getModels({
-            types: modelNames,
-            context: context
-        });
-    }
-});
  Ext.define("cycle-time-summary-app", {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -2777,8 +2218,6 @@ Ext.define('CA.technicalservices.Utility',{
 
     config: {
         defaultSettings: {
-          //  includeTypes:  ['HierarchicalRequirement','Defect'],
-            //artifactType: 'User Story & Defect',
             queryFilter: "",
             granularity: 'minute',
             precision: 2,
@@ -2790,8 +2229,30 @@ Ext.define('CA.technicalservices.Utility',{
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addSelectors()
+       this.addSelectors();
+       // this.loadModels().then({
+       //      success: this.addSelectors(),
+       //      scope: this
+       //  });
     },
+
+    loadModels: function() {
+
+        if (this.models) {
+            return Deft.Promise.when(this.models);
+        } else {
+            return Rally.data.ModelFactory.getModels({
+                context: this.context || Rally.environment.getContext(),
+                types: this.getModelNames()
+            }).then({
+                success: function(models) {
+                    this.models = models;
+                },
+                scope: this
+            });
+        }
+    },
+
     showErrorNotification: function(msg){
         if (!msg){
             msg = "Error during execution.  See logs for details."
@@ -2804,45 +2265,6 @@ Ext.define('CA.technicalservices.Utility',{
         this.getCycleTimeBox().removeAll();
         this.getFilterBox().removeAll();
         this.getMessageBox().update({message: this.instructions});
-
-        // var fp = this.getSelectorBox().add({
-        //     xtype: 'fieldpickerbutton',
-        //     modelNames: this.getModelNames(),
-        //     context: this.getContext(),
-        //     stateful: true,
-        //     stateId: 'grid-columns'
-        // });
-        // fp.on('fieldsupdated', this.updateGridFields, this);
-
-        // var filter = this.getSelectorBox().add({
-        //     xtype: 'rallyinlinefilterbutton',
-        //     modelNames: this.getModelNames(),
-        //     context: this.getContext(),
-        //     margin: '3 9 0 0',
-        //     stateful: true,
-        //     stateId: 'grid-filters-1',
-        //     inlineFilterPanelConfig: {
-        //         quickFilterPanelConfig: {
-        //             addQuickFilterConfig: {
-        //                 whiteListFields: ['Milestones', 'Tags']
-        //             }
-        //         },
-        //         advancedFilterPanelConfig: {
-        //             advancedFilterRowsConfig: {
-        //                 propertyFieldConfig: {
-        //                     whiteListFields: ['Milestones', 'Tags']
-        //                 }
-        //             }
-        //         }
-        //     },
-        //     listeners: {
-        //         inlinefilterready: this.addInlineFilterPanel,
-        //         inlinefilterchange: this.updateGridFilters,
-        //         scope: this
-        //     }
-        // });
-
-        //this.addCycleTimePanel();
 
         var ctButton = this.getSelectorBox().add({
             xtype: 'cycletimepickerbutton',
@@ -2858,6 +2280,22 @@ Ext.define('CA.technicalservices.Utility',{
         });
 
         this.getSelectorBoxRight().removeAll();
+
+
+
+        // if (!this.cycleTimePanel){
+        //     this.cycleTimePanel = this.getSelectorBox().add({
+        //         xtype: 'cycletimepickerpanel',
+        //         modelNames: this.getModelNames(),
+        //         models: this.models,
+        //         context: this.getContext(),
+        //         dateType: this.getSetting('dateType'),
+        //         flex: 1
+        //     });
+        //     this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
+        //     this.fireEvent('cycletimepickerready', this.cycleTimePanel);
+        // }
+
 
         var bt = this.getSelectorBoxRight().add({
             xtype: 'rallybutton',
@@ -2881,17 +2319,6 @@ Ext.define('CA.technicalservices.Utility',{
                 scope: this
             }
         });
-
-        // this.getSelectorBoxRight().add({
-        //     xtype: 'rallybutton',
-        //     iconCls: 'icon-help',
-        //     cls: 'help-button',
-        //     margin: '0 9 0 25',
-        //     listeners: {
-        //         click: this.showInstructionsDialog,
-        //         scope: this
-        //     }
-        // });
     },
 
      showInstructionsDialog: function(btn){
@@ -2932,36 +2359,7 @@ Ext.define('CA.technicalservices.Utility',{
              ]
          });
      },
-    showExportMenu: function(button){
-         var menu = Ext.widget({
-             xtype: 'rallymenu',
-             items: [
-             {
-                 text: 'Export Summary...',
-                 handler: function(){
-                     this.exportData(false,true);
-                 },
-                 scope: this
-             },{
-                 text: 'Export with Timestamps...',
-                 handler: function(){
-                     this.exportData(true,false);
-                 },
-                 scope: this
-             },{
-                 text: 'Export Summary and Timestamps...',
-                 handler: function(){
-                     this.exportData(true, true);
-                 },
-                 scope: this
-             }
-            ]
-         });
-         menu.showBy(button.getEl());
-         if(button.toolTip) {
-             button.toolTip.hide();
-         }
-     },
+
     getSelectorBoxRight: function(){
          return this.down('#selector_box_right');
      },
@@ -3008,6 +2406,7 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('updateCycleTimeParameters',parameters.getCycleTimeParameters());
         this._gridConfig.cycleTimeParameters = parameters.getCycleTimeParameters();
         this.setUpdateButtonUpdateable(true);
+        this.getGridBox().removeAll();
     },
      calculateCycleTime: function(){
          return this.down('cycletimepickerbutton') && this.down('cycletimepickerbutton').hasValidCycleTimeParameters() || false;
@@ -3095,7 +2494,9 @@ Ext.define('CA.technicalservices.Utility',{
                     "ReadyTime": 0,
                     "TotalArtifacts" : 0,
                     "TotalStories":  0,
-                    "TotalDefects": 0,                    
+                    "TotalDefects": 0,
+                    "TotalP1Defects":0,
+                    "TotalP2Defects":0,                  
                     "Records": []                    
                 }
                 dt = Ext.Date.add(dt,Ext.Date.DAY,7);
@@ -3114,6 +2515,8 @@ Ext.define('CA.technicalservices.Utility',{
                             cycle_time_summary[key].TotalArtifacts++;
                             if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
                             if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
+                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[key].TotalP1Defects++;
+                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[key].TotalP2Defects++;
                             cycle_time_summary[key].Records.push(artifact);            
                         }
                 }
@@ -3137,7 +2540,8 @@ Ext.define('CA.technicalservices.Utility',{
                         cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
                         if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[artifact.get('Project').ObjectID].TotalStories++;
                         if(artifact.get('_type') == 'defect') cycle_time_summary[artifact.get('Project').ObjectID].TotalDefects++;
-
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP1Defects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP2Defects++;
                     } else {
                         cycle_time_summary[artifact.get('Project').ObjectID] = {
                             "Project" : artifact.get('Project').Name,
@@ -3148,6 +2552,8 @@ Ext.define('CA.technicalservices.Utility',{
                             "TotalArtifacts" : 1,
                             "TotalStories": artifact.get('_type') == 'hierarchicalrequirement' ? 1 : 0,
                             "TotalDefects": artifact.get('_type') == 'defect' ? 1 : 0,
+                            "TotalP1Defects": (artifact.get('_type') == 'defect') && (artifact.get('Priority') == '1 = Mult Cust / No Workaround') ? 1 : 0,
+                            "TotalP2Defects": (artifact.get('_type') == 'defect') && (artifact.get('Priority') == '2 = Single Cust / No Workaround') ? 1 : 0,
                             "Records": [artifact]
                         }
                     }                    
@@ -3155,8 +2561,6 @@ Ext.define('CA.technicalservices.Utility',{
 
             })            
         }
-
-
 
 //(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
@@ -3172,13 +2576,18 @@ Ext.define('CA.technicalservices.Utility',{
             results.push(value);
         })
 
-         var store = Ext.create('Rally.data.custom.Store',{
-            data: results,
-            sorters: {
+        var store_config = {
+            data: results
+        }
+
+        if(me.getSetting('dateType') != 'LastNWeeks'){
+            store_config.sorters = {
                 property: 'AvgCycleTime',
                 direction: 'DESC'
             }
-         });
+        }
+
+        var store = Ext.create('Rally.data.custom.Store',store_config );
 
          me.overallSummaryData = {};
          if(me.getSetting('dateType') == 'LastNWeeks'){
@@ -3220,14 +2629,25 @@ Ext.define('CA.technicalservices.Utility',{
         var cycle = [];
         var active = [];
         var ready_queue = [];
-        
-        // console.log('me.overallSummaryData>>', me.overallSummaryData);
-        // results.push(me.overallSummaryData);
 
         Ext.Array.each(results, function(value){
             categories.push(me.getSetting('dateType') == 'LastNWeeks' ? value.Week:value.Project);
-            lead.push(Ext.util.Format.round(value.AvgLeadTime,2));
-            cycle.push(Ext.util.Format.round(value.AvgCycleTime,2));
+            lead.push({
+                        y: Ext.util.Format.round(value.AvgLeadTime,2),
+                        events: {
+                          click: function() {
+                              me.showDrillDown(value);
+                          }
+                        }
+                       });
+            cycle.push({
+                        y: Ext.util.Format.round(value.AvgCycleTime,2),
+                        events: {
+                          click: function() {
+                              me.showDrillDown(value);
+                          }
+                        }
+                        });
             // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
             // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
         });
@@ -3274,8 +2694,7 @@ Ext.define('CA.technicalservices.Utility',{
 
      addSummaryGrid: function(store){
         var me = this;
-         //this.logger.log('addSummaryGrid',results, results.length);
-         this.suspendLayouts();
+        this.suspendLayouts();
 
         this.getGridBox().add({
              xtype: 'rallygrid',
@@ -3299,7 +2718,9 @@ Ext.define('CA.technicalservices.Utility',{
                         me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
                         me.addChart(me.results);
                     },
-                    cellclick: me.showDrillDown,
+                    cellclick: function(view, cell, cellIndex, record) {
+                        me.showDrillDown(record);
+                    },
                     scope:me
                 }
             },            
@@ -3309,19 +2730,19 @@ Ext.define('CA.technicalservices.Utility',{
      },
 
 
-    showDrillDown: function(view, cell, cellIndex, record) {
+    showDrillDown: function(record) {
         var me = this;
         
-        console.log(view, cell, cellIndex, record);
+        console.log(record);
 
         var store = Ext.create('Rally.data.custom.Store', {
-            data: record.get('Records'),
+            data: record.Records || record.get('Records'),
             pageSize: 2000
         });
         
         Ext.create('Rally.ui.dialog.Dialog', {
             id        : 'detailPopup',
-            title     : 'Artifacts for '+record.get('Project'),
+            title     : 'Artifacts for ' + record.Project || record.get('Project'),
             width     : Ext.getBody().getWidth() - 50,
             height    : Ext.getBody().getHeight() - 50,
             closable  : true,
@@ -3336,9 +2757,6 @@ Ext.define('CA.technicalservices.Utility',{
                 sortableColumns      : true,
                 showRowActionsColumn : false,
                 showPagingToolbar    : false,
-                // features: [{
-                //     ftype: 'summary'
-                // }],
                 columnCfgs           : this.getDrillDownColumns(),
                 store : store
             }]
@@ -3346,7 +2764,8 @@ Ext.define('CA.technicalservices.Utility',{
     },
 
     getDrillDownColumns: function() {
-        return [
+        var me = this;
+        var cols = [
             {
                 dataIndex : 'FormattedID',
                 text: "id",
@@ -3365,7 +2784,16 @@ Ext.define('CA.technicalservices.Utility',{
                 text: 'Schedule State',
                 flex: 1
             }
-        ].concat(this.getHistoricalDataColumns());
+        ];
+
+        if(me.getArtifactType() == 'Defect'){
+            cols.push({
+                dataIndex: 'Priority',
+                text: 'Priority',
+                flex: 1
+            });
+        }
+        return cols.concat(this.getHistoricalDataColumns());
     },
 
     _export: function(){
@@ -3437,29 +2865,6 @@ Ext.define('CA.technicalservices.Utility',{
         me.setLoading(false);
     },
 
-
-     // addGrid: function(records){
-     //     //this.logger.log('addGrid',records, records.length);
-     //     var fields = records.length > 0 && records[0].getFields() || undefined;
-
-     //     this.suspendLayouts();
-     //     var store = Ext.create('Rally.data.custom.Store',{
-     //         data: records,
-     //         fields: fields,
-     //         pageSize: 25 //records.length
-     //     });
-
-     //     this.getGridBox().add({
-     //         xtype: 'rallygrid',
-     //         store: store,
-     //         columnCfgs: this.getColumnCfgs(records[0]),
-     //         showPagingToolbar: true,
-     //         scroll: 'vertical',
-     //         emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
-     //     });
-     //     this.resumeLayouts(true);
-     // },
-
      fetchWsapiArtifactData: function(){
          var deferred = Ext.create('Deft.Deferred');
          Ext.create('Rally.data.wsapi.artifact.Store',{
@@ -3480,10 +2885,8 @@ Ext.define('CA.technicalservices.Utility',{
                      var count =  operation && operation.resultSet && operation.resultSet.total;
                      this.logger.log('count', count, this.getExportLimit());
                      if (count > this.getExportLimit()){
-                         //this.updateMessageBox(Ext.String.format('A total of {0} current records were found, but only {1} can be fetched for performance reasons.  Please refine the advanced filters (current, not Cycle Time) to fetch less data.',count,this.getExportLimit()), Rally.util.Colors.brick);
                         deferred.resolve(null);
                      } else {
-                         //this.updateMessageBox(Ext.String.format('{0} current records found.', count));
                          deferred.resolve(records);
                      }
 
@@ -3498,6 +2901,7 @@ Ext.define('CA.technicalservices.Utility',{
      },
 
     getWsapiArtifactFilters: function(){
+        var me = this;
         var filters = this._gridConfig && this._gridConfig.filters && this._gridConfig.filters.filters[0] || null;
         if (this.getQueryFilter()){
             if (filters){
@@ -3520,7 +2924,6 @@ Ext.define('CA.technicalservices.Utility',{
             }
 
             Ext.Array.each(states, function(s){
-               // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
                     cycleFilters.push({
                         property: stateFieldName,
@@ -3530,17 +2933,35 @@ Ext.define('CA.technicalservices.Utility',{
             });
             cycleFilters = Rally.data.wsapi.Filter.or(cycleFilters);
 
-            //Add ready filter
-            var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
-                 property: 'Ready',
-                 value: true
-            });
-
-
             if (filters){
-                filters = filters.and(cycleFilters).and(ready_filter);
+                filters = filters.and(cycleFilters);
             } else {
-                filters = cycleFilters.and(ready_filter);
+                filters = cycleFilters;
+            }
+
+
+            //Add ready filter
+
+            if(me.getArtifactType() == 'Defect'){
+
+                var defect_filters  = [{
+                     property: 'State',
+                     operator: '=',
+                     value: 'Closed'
+                },{
+                     property: 'Type',
+                     operator: '!=',
+                     value: 'NLC'
+                }];
+
+                filters = filters.and(Rally.data.wsapi.Filter.and(defect_filters));
+
+            }else{
+                var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
+                     property: 'Ready',
+                     value: true
+                });
+                filters = filters.and(ready_filter);      
             }
 
         }
@@ -3562,19 +2983,17 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('getWsapiArtifactFilters', filters.toString());
         return filters;
     },
+
     getStartDate: function(){
         if (this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.startDate){
-        //if (this.startDatePicker.getValue()){
             return this._gridConfig.cycleTimeParameters.startDate;
-            //return Rally.util.DateTime.toIsoString(this._gridConfig.cycleTimeParameters.startDate);
         }
         return null;
     },
+    
     getEndDate: function(){
         if (this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.endDate){
-        //if (this.endDatePicker.getValue()){
             return this._gridConfig.cycleTimeParameters.endDate;
-            //return Rally.util.DateTime.toIsoString(this._gridConfig.cycleTimeParameters.endDate);
         }
         return null;
     },
@@ -3582,10 +3001,7 @@ Ext.define('CA.technicalservices.Utility',{
     getCycleStates: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.cycleStates || [];
     },
-    getGridColumns: function(){
-        return this.down('fieldpickerbutton') && this.down('fieldpickerbutton').getFields();
-        //return this._gridConfig && this._gridConfig.fields || [];
-    },
+
     getPreviousStates: function(endState){
        var states = this.getCycleStates(),
         // var states = this.getFromStateCombo().getStore().getRange(),
@@ -3604,6 +3020,7 @@ Ext.define('CA.technicalservices.Utility',{
         this.logger.log('getPreviousStates', previousStates);
         return previousStates;
     },
+    
     getEndStates: function(endState){
         if (!endState){
             endState = this.getToStateValue();
@@ -3623,19 +3040,12 @@ Ext.define('CA.technicalservices.Utility',{
         return endStates;
     },
     getCurrentFetchList: function(){
-        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate'];
+        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate','Priority'];
 
-        // var fetch = Ext.Array.merge(this.getGridColumns(), ['ObjectID']);
         if (this.getStateField()){
             Ext.Array.merge(this.getStateField(), fetch);
         }
-        // if (this.getIncludeBlocked()){
-        //     Ext.Array.merge('Blocked', fetch);
-        // }
-        // if (this.getIncludeReady()){
-        //     Ext.Array.merge(fetch, 'Ready');
-        // }
-        // this.logger.log('getCurrentFetchList', fetch);
+
         return fetch;
     },
     getShowOnlyCompletedCycles: function(){
@@ -3701,9 +3111,6 @@ Ext.define('CA.technicalservices.Utility',{
                 readyQueueState: readyQueueState
             }).load(records).then({
                 success: function (updatedRecords) {
-
-                    //this.updateMessageBox(Ext.String.format("Displaying {0} of {1} records with relevant cycle time data.", updatedRecords.length, records.length));
-
                     deferred.resolve(updatedRecords);
                 },
                 failure: function (msg) {
@@ -3772,17 +3179,9 @@ Ext.define('CA.technicalservices.Utility',{
 
                 if (s && s.length > 0 && s != this.getReqdyQueueStateValue()){
                     var header = this.getTimeInStateColumnHeader(s);
-                    //if (s === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-                    //    header =  this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText);
-                    //}
                     columns.push({
                         xtype: 'timetemplatecolumn',
                         dataType: 'timeInStateData',
-                        // summaryType: 'sum',
-                        // summaryRenderer: function(value, summaryData, dataIndex) {
-                        //     console.log('summaryRenderer',value, summaryData, dataIndex);
-                        //     return value;
-                        // },
                         stateName: this.getStateField(),
                         stateValue: s,
                         text: header,
@@ -3868,27 +3267,30 @@ Ext.define('CA.technicalservices.Utility',{
         {
             dataIndex: 'TotalArtifacts',
             text:'Throughput'
-            // ,
-            // renderer: function(value){
-            //     return Ext.Number.toFixed(value,2); 
-            // },
-            // exportRenderer: function(value){
-            //     return value; 
-            // },            
-            // summaryRenderer: function(value, summaryData, dataIndex) {
-            //     me.overallSummaryData.AvgLeadTime = value;
-            //     return Ext.Number.toFixed(value,2); 
-            // }
-        },        
-        {
-            dataIndex: 'TotalStories',
-            text:'User Stories'
-        },        
-        {
-            dataIndex: 'TotalDefects',
-            text:'Defects'
-        },        
-        {
+
+        }];
+
+        if(me.getArtifactType() == 'Defect'){
+            columns.push({
+                dataIndex: 'TotalP1Defects',
+                text:'Priority 1 Defects'
+            },        
+            {
+                dataIndex: 'TotalP2Defects',
+                text:'Priority 2 Defects'
+            });
+        }else{
+            columns.push({
+                dataIndex: 'TotalStories',
+                text:'User Stories'
+            },        
+            {
+                dataIndex: 'TotalDefects',
+                text:'Defects'
+            });
+        }
+                
+        columns.push({
             dataIndex: 'AvgLeadTime',
             text:'Avg. Lead Time',
             summaryType: 'average',
@@ -3973,176 +3375,13 @@ Ext.define('CA.technicalservices.Utility',{
             summaryRenderer: function(value, summaryData, dataIndex) {
                 return Ext.Number.toFixed(value,2); 
             }
-        }
-
-        ];
+        });
 
 
         return columns;
     },
 
 
-    // _export: function(){
-    //     var grid = this.down('rallygrid');
-    //     var me = this;
-
-    //     if ( !grid ) { return; }
-        
-    //     this.logger.log('_export',grid);
-
-    //     var filename = Ext.String.format('export.csv');
-
-    //     this.setLoading("Generating CSV");
-    //     Deft.Chain.sequence([
-    //         function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
-    //     ]).then({
-    //         scope: this,
-    //         success: function(csv){
-    //             if (csv && csv.length > 0){
-    //                 Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
-    //             } else {
-    //                 Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
-    //             }
-                
-    //         }
-    //     }).always(function() { me.setLoading(false); });
-    // },
-
-
-    exportData: function(includeTimestamps, includeSummary){
-        var grid = this.down('rallygrid');
-        if (!grid){
-            this.showErrorNotification("Cannot save export becuase there is no data displapyed to export.");
-            return;
-        }
-        var totalCount= grid.getStore().getTotalCount();
-        this.logger.log('exportData', totalCount);
-
-        var store = grid.getStore();
-
-        this.getMessageBox().setLoading("Preparing Export File(s)...");
-        store.load({
-            pageSize: totalCount,
-            limit: totalCount,
-            callback: function(records, operation){
-                this.getMessageBox().setLoading(false);
-                if (operation.wasSuccessful()){
-                    var columns = this.getColumnCfgs(records && records[0]);
-                    this.saveExportFiles(records, columns, includeTimestamps, includeSummary);
-                } else {
-                    this.logger.log('Error preparing export data', operation);
-                    Rally.ui.notify.Notifier.showError('Error preparing export data:  ' + operation && operation.error && operation.error.errors.join(','));
-                }
-
-            },
-            scope: this
-        });
-    },
-    saveExportFiles: function(updatedRecords, columns, includeTimestamps, includeSummary){
-
-        if (includeSummary){
-            var filename = Ext.String.format("cycle-time-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
-                csv = this.getExportSummaryCSV(updatedRecords, columns);
-           // this.logger.log('saveExportFiles', csv, filename);
-            CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
-        }
-        if (includeTimestamps){
-            var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
-                timeStampCSV = this.getExportTimestampCSV(updatedRecords);
-           // this.logger.log('saveExportFiles', timeStampCSV);
-            CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
-        }
-    },
-    getExportTimestampCSV: function(updatedRecords){
-        return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords, this.exportDateFormat);
-    },
-    getExportSummaryCSV: function(updatedRecords, columns){
-        var standardColumns = _.filter(columns, function(c){ return c.dataIndex || null; }),
-            headers = _.map(standardColumns, function(c){ if (c.text === "ID") {return "Formatted ID"; } return c.text; }),
-            fetchList = _.map(standardColumns, function(c){ return c.dataIndex; });
-
-        this.logger.log('getExportSummaryCSV', headers, fetchList);
-        var states = this.getCycleStates(),
-            stateField = this.getStateField(),
-            includeBlocked = this.getIncludeBlocked(),
-            includeReady = this.getIncludeReady();
-
-        headers.push(this.getCycleTimeColumnHeader());
-        headers.push(this.getCycleTimeStartColumnHeader());
-        headers.push(this.getCycleTimeEndColumnHeader());
-
-        if (includeBlocked){
-            headers.push(this.getTimeInStateColumnHeader("Blocked"));
-        }
-        if (includeReady){
-            headers.push(this.getTimeInStateColumnHeader("Ready"));
-        }
-
-        Ext.Array.each(states, function(state){
-            //if (state === CArABU.technicalservices.CycleTimeCalculator.creationDateText){
-            //    headers.push(this.getTimeInStateColumnHeader(CArABU.technicalservices.CycleTimeCalculator.noStateText));
-            //} else {
-                headers.push(this.getTimeInStateColumnHeader(state));
-            //}
-
-        }, this);
-
-        var csv = [headers.join(',')],
-            dateFormat = this.exportDateFormat;
-
-        for (var i = 0; i < updatedRecords.length; i++){
-            var row = [],
-                record = updatedRecords[i];
-
-            for (var j = 0; j < fetchList.length; j++){
-                var val = record.get(fetchList[j]);
-                if (Ext.isObject(val)){
-                    if (val._tagsNameArray){
-                        var newVal = [];
-                        Ext.Array.each(val._tagsNameArray, function(t){
-                            newVal.push(t.Name);
-                        });
-                        val = newVal.join(',');
-                    } else {
-                        val = val._refObjectName;
-                    }
-                }
-                row.push(val || "");
-            }
-            //CycleTime
-            var timeInStateData = record.get('timeInStateData');
-
-            row.push(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime || "");
-
-            var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
-                endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
-
-            var formattedStart = startDate && Rally.util.DateTime.format(startDate,dateFormat) || "",
-                formattedEnd = endDate && Rally.util.DateTime.format(endDate,dateFormat) || "";
-
-            row.push(formattedStart);
-            row.push(formattedEnd);
-
-            if (includeBlocked){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
-            }
-            if (includeReady){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null, ""));
-            }
-
-            for (var s = 0; s < states.length; s++){
-                if (timeInStateData){
-                    row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
-                } else {
-                    row.push("");
-                }
-            }
-
-            row = _.map(row, function(v){ return Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));});
-            csv.push(row.join(","));
-        }
-        return csv.join("\r\n");
-    },
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){
@@ -4169,6 +3408,9 @@ Ext.define('CA.technicalservices.Utility',{
         return this.cycleTimeToState;
         //return this.down('#cb-toState');
     },
+    getArtifactType: function(){
+        return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.artifactType || null;
+    },    
     getToStateValue: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.cycleEndState || null;
     },

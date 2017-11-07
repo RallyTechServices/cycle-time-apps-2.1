@@ -42,13 +42,6 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         Ext.suspendLayouts();
             this.setText('');
             this._indicateNoActiveFilterPresent();
-        // if (this.hasValidCycleTimeParameters()) {
-        //     this.setText('');
-        //     this._indicateActiveFilterPresent();
-        // } else {
-        //     this.setText('');
-        //     this._indicateNoActiveFilterPresent();
-        // }
         Ext.resumeLayouts(false);
         this.fireEvent('cycletimeparametersupdated', this);
     },
@@ -156,16 +149,8 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
         this.cycleTimePanel && this.cycleTimePanel.toggleCollapse();
     },
 
-    //_onCollapse: function() {
-    //    console.log('_onCollapse validate here?');
-    //},
-
     collapse: function() {
         this.cycleTimePanel && this.cycleTimePanel.collapse();
     },
 
-    // _onBeforeShowToolTip: function() {
-    //     var action = this.cycleTimePanel && this.cycleTimePanel.collapsed ? 'Show' : 'Hide' || "Toggle";
-    //     this.toolTip.update(Ext.String.format('{0} Cycle Time parameters', action));
-    // }
 });

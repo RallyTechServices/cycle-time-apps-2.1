@@ -31,10 +31,7 @@ Ext.define('CArABU.technicalservices.LeadTimeTemplateColumn', {
                 if (values && values.cycleTime && values.endDate){
                     toolTip = Ext.String.format("{0}",
                         values.cycleTime
-                        // ,
-                        // toolTip,
-                        // Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a')
-                        );
+                    );
                 }
 
                 return toolTip;
@@ -106,23 +103,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             getTime: function(values){
                 return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,0);
             },
-            // getCurrentIcon: function(values){
-            //     if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
-            //         var iconCls = "icon-square",
-            //             color = "#005eb8";
 
-            //         if (this.stateName === "Blocked"){
-            //             iconCls = "icon-blocked";
-            //             color = "#b81b10";
-            //         }
-            //         if (this.stateName === "Ready"){
-            //             iconCls = "icon-ready";
-            //             color = "#8dc63f";
-            //         }
-            //         return Ext.String.format('<div class="{0}" style="color:{1}"></div>', iconCls, color);
-            //     }
-            //     return "";
-            // },
             getTooltip: function(values){
                 var timeData = values[this.stateName];
                 if (timeData && this.stateValue){
@@ -153,9 +134,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
         me.hasCustomRenderer = true;
         me.callParent(arguments);
     },
-    //getValue: function(){
-    //    return values[this.costField] || 0;
-    //},
+
     defaultRenderer: function(value, meta, record) {
         var data = Ext.apply({}, record.get(this.dataType));
         data.currentValue = record.get(this.stateName);
