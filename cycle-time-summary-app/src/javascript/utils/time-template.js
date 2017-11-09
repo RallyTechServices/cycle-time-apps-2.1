@@ -115,7 +115,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 }
 
                 var stateValue = this.stateValue || "[No State]";
-                if (this.stateName === "Blocked" || this.stateName === "Ready"){
+                if (this.stateName === "Blocked" || this.stateName === "c_Blocked" || this.stateName === "Ready"){
                     stateValue = "true";
                 }
 

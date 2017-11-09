@@ -103,6 +103,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         }
        var timeInStateData =  {snaps: snapshots};
         timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField,this.readyQueueState);
+        timeInStateData.c_Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "c_Blocked", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField,this.readyQueueState);
         timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom",this.projects,this.stateField,this.toState,this.stateField, this.readyQueueState);
         var stateField = this.stateField;
 
@@ -156,7 +157,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return deferred;
     },
     _getFetchList: function(){
-        var fetch = ['FormattedID','AcceptedDate','ScheduleState','_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
+        var fetch = ['FormattedID','Parent','AcceptedDate','ScheduleState','_ValidFrom','_ValidTo','ObjectID',this.stateField, "_PreviousValues." + this.stateField];
+            fetch = fetch.concat(["c_Blocked","_PreviousValues.c_Blocked"]);
         if (this.includeReady){
             fetch = fetch.concat(["Ready","_PreviousValues.Ready"]);
         }

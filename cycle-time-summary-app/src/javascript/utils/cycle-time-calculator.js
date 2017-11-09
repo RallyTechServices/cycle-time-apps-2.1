@@ -33,7 +33,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
             var endDate =  Rally.util.DateTime.fromIsoString(snap['_ValidTo']);
             //excluding when the field in ready queue state. 
             if(!(readyQueueStateField && snap[readyQueueStateField] == readyQueueStateValue) ){
-                if(snap[field] === value && Ext.Array.contains(projectIds, snap.Project)){
+                if(snap[field] === value && (Ext.Array.contains(projectIds, snap.Project) || Ext.Array.contains(projectIds, snap.Parent))){
                     //exclude if in last column and Ready for 
 
                     //if(!((value == 'Accepting' && snap['Ready']) || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
@@ -73,10 +73,10 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         var cycleTime = 0;
         var startDate, endDate, initalStartDate;
         Ext.each(snaps, function(snap){
-             if (snap[field] != null  && Ext.Array.contains(validStates,snap[field]) && Ext.Array.contains(projectIds, snap.Project)){
+             if (snap[field] != null  && Ext.Array.contains(validStates,snap[field]) && (Ext.Array.contains(projectIds, snap.Parent) || Ext.Array.contains(projectIds, snap.Project))){
                 //Exclude if Accepting and Ready
-                if(!((snap[stateField] == toState && snap['Ready'])  || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
-
+                //if(!((snap[stateField] == toState && snap['Ready'])  || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
+                if(!(snap[stateField] == toState && snap['Ready'])){
                     if(!startDate){
                         initalStartDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
                     }
