@@ -256,31 +256,57 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         });
         }
 
+        var picker_model = 'Project';
+
+        var picker_store_config = {
+                autoLoad: false
+            }
+
+        if(this.modelNames[0] == 'PortfolioItem/Feature'){
+            picker_store_config.filters = Ext.create('Rally.data.wsapi.Filter', {
+                 property: 'State',
+                 operator: '!=',
+                 value: 'Completed'
+            });
+            picker_model = 'PortfolioItem/Theme';
+        }
+
+
+        // var parent_store = Ext.create('Rally.data.wsapi.Store', {
+        //                         model: picker_model,
+        //                         fetch: true,
+        //                         autoLoad: false,
+        //                         filters: picker_store_config
+        //                     });
 
         this.add({
                 xtype: 'rallymultiobjectpicker',
-                modelType: 'Project',
-                fieldLabel: 'Projects',
+                modelType: picker_model,
+                fieldLabel: picker_model,
                 labelSeparator: "",
                 itemId: 'selectedProjects',
                 labelAlign: 'right',
                 labelWidth: 150,    
                 stateful:true,
                 stateId: 'multiObjectPicker1',
-                emptyText: 'Search Projects..',
+                emptyText: 'Search...',
                 width: 400,
+                storeConfig: picker_store_config,
                 value: state.projects,
                 listeners: {
                     scope: this,
+                    // boxready: function(cb) {
+                    //  //   this._filterOutWthString(cb.getStore(),'Class');
+                    // },
                     select: function(picker){
-                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Items' : 'Search...'
                         this.updateCycleTimeParameters();
                     },
                     change: function(picker){
-                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Items' : 'Search...'
                     },
                     deselect: function(picker){
-                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Projects' : 'Search Projects..'
+                        picker.emptyText = picker.selectedValues && picker.selectedValues.length > 0 ? picker.selectedValues.length + ' Seleted Items' : 'Search...'
                     },
                     blur: function(picker){
                         picker.collapse();
@@ -298,6 +324,30 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
         this._updateStateDropdowns(stateFieldCb);
         this.updateCycleTimeParameters();
+    },
+
+
+    _filterOutWthString: function(store,filter_string) {
+
+        var app = Rally.getApp();
+        
+        store.filter([{
+            filterFn:function(field){ 
+                if('-- No Entry --' == field.get('name')){
+                    return true;
+                }
+                var attribute_definition = field.get('fieldDefinition').attributeDefinition;
+                var attribute_type = null;
+                if ( attribute_definition ) {
+                    attribute_name = attribute_definition.Name;
+                }
+                //string.toLowerCase().indexOf(searchstring.toLowerCase())
+                if ( attribute_name.toLowerCase().indexOf(filter_string.toLowerCase()) > -1) {
+                        return true;
+                }
+                return false;
+            } 
+        }]);
     },
 
     _getModelNames: function(value){

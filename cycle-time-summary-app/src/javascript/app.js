@@ -300,8 +300,10 @@
                     "LeadTime" : 0,
                     "ReadyQueueTime" : 0,
                     "BlockTime": 0,
+                    "c_BlockedTime": 0,
                     "ReadyTime": 0,
                     "TotalArtifacts" : 0,
+                    "ChildrenCount" : 0,
                     "TotalStories":  0,
                     "TotalDefects": 0,
                     "TotalP1Defects":0,
@@ -314,20 +316,22 @@
             Ext.Object.each(cycle_time_summary,function(key,value){
                 Ext.Array.each(records,function(artifact){
                 if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
-                        if(artifact.get('AcceptedDate') && Ext.Date.between(artifact.get('AcceptedDate'), value.StartDate, value.EndDate)){
-                            var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
-                            artifact.set('ReadyQueueTime',ready_queue_cycle_time);
-                            cycle_time_summary[key].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
-                            cycle_time_summary[key].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
-                            cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
-                            cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
-                            cycle_time_summary[key].TotalArtifacts++;
-                            if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
-                            if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
-                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[key].TotalP1Defects++;
-                            if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[key].TotalP2Defects++;
-                            cycle_time_summary[key].Records.push(artifact);            
-                        }
+                    if(artifact.get('cycleTimeData') && artifact.get('cycleTimeData').endDate && Ext.Date.between(artifact.get('cycleTimeData').endDate, value.StartDate, value.EndDate)){
+                        var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
+                        artifact.set('ReadyQueueTime',ready_queue_cycle_time);
+                        cycle_time_summary[key].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
+                        cycle_time_summary[key].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
+                        cycle_time_summary[key].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
+                        cycle_time_summary[key].c_BlockedTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "c_Blocked",null,""),0);
+                        cycle_time_summary[key].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
+                        cycle_time_summary[key].TotalArtifacts++;
+                        cycle_time_summary[key].ChildrenCount += artifact.get('DirectChildrenCount') || 0;
+                        if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[key].TotalStories++;
+                        if(artifact.get('_type') == 'defect') cycle_time_summary[key].TotalDefects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[key].TotalP1Defects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[key].TotalP2Defects++;
+                        cycle_time_summary[key].Records.push(artifact);            
+                    }
                 }
                 });
             });
@@ -336,29 +340,36 @@
 
         }else{
             // Calculate the averages for each project
+
             Ext.Array.each(records,function(artifact){
                 if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
                     var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
+
                     artifact.set('ReadyQueueTime',ready_queue_cycle_time);
-                    if(cycle_time_summary[artifact.get('Project').ObjectID]){
-                        cycle_time_summary[artifact.get('Project').ObjectID].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
-                        cycle_time_summary[artifact.get('Project').ObjectID].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
-                        cycle_time_summary[artifact.get('Project').ObjectID].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
-                        cycle_time_summary[artifact.get('Project').ObjectID].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
-                        cycle_time_summary[artifact.get('Project').ObjectID].TotalArtifacts++;
-                        cycle_time_summary[artifact.get('Project').ObjectID].Records.push(artifact);            
-                        if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[artifact.get('Project').ObjectID].TotalStories++;
-                        if(artifact.get('_type') == 'defect') cycle_time_summary[artifact.get('Project').ObjectID].TotalDefects++;
-                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP1Defects++;
-                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[artifact.get('Project').ObjectID].TotalP2Defects++;
+                    var parent_id =  me.getArtifactType() == 'Feature' ? artifact.get('Parent').ObjectID : artifact.get('Project').ObjectID;
+                    if(cycle_time_summary[parent_id]){
+                        cycle_time_summary[parent_id].LeadTime += Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0);
+                        cycle_time_summary[parent_id].ReadyQueueTime += Ext.Number.from(ready_queue_cycle_time.cycleTime,0);
+                        cycle_time_summary[parent_id].BlockTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0);
+                        cycle_time_summary[parent_id].c_BlockedTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "c_Blocked",null,""),0);
+                        cycle_time_summary[parent_id].ReadyTime += Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0);
+                        cycle_time_summary[parent_id].TotalArtifacts++;
+                        cycle_time_summary[parent_id].ChildrenCount += artifact.get('DirectChildrenCount') || 0;
+                        cycle_time_summary[parent_id].Records.push(artifact);            
+                        if(artifact.get('_type') == 'hierarchicalrequirement') cycle_time_summary[parent_id].TotalStories++;
+                        if(artifact.get('_type') == 'defect') cycle_time_summary[parent_id].TotalDefects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '1 = Mult Cust / No Workaround') cycle_time_summary[parent_id].TotalP1Defects++;
+                        if(artifact.get('_type') == 'defect' && artifact.get('Priority') == '2 = Single Cust / No Workaround') cycle_time_summary[parent_id].TotalP2Defects++;
                     } else {
-                        cycle_time_summary[artifact.get('Project').ObjectID] = {
-                            "Project" : artifact.get('Project').Name,
+                        cycle_time_summary[parent_id] = {
+                            "Project" : me.getArtifactType() == 'Feature' ? artifact.get('Parent').Name : artifact.get('Project').Name,
                             "LeadTime" : Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0),
                             "ReadyQueueTime" : Ext.Number.from(ready_queue_cycle_time.cycleTime,0),
                             "BlockTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Blocked",null,""),0),
+                            "c_BlockedTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "c_Blocked",null,""),0),
                             "ReadyTime": Ext.Number.from(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(artifact.get('timeInStateData'), "Ready",null,""),0),
                             "TotalArtifacts" : 1,
+                            "ChildrenCount": artifact.get('DirectChildrenCount') || 0,
                             "TotalStories": artifact.get('_type') == 'hierarchicalrequirement' ? 1 : 0,
                             "TotalDefects": artifact.get('_type') == 'defect' ? 1 : 0,
                             "TotalP1Defects": (artifact.get('_type') == 'defect') && (artifact.get('Priority') == '1 = Mult Cust / No Workaround') ? 1 : 0,
@@ -376,10 +387,14 @@
         
 
         Ext.Object.each(cycle_time_summary,function(key,value){
-            value.AvgLeadTime = value.LeadTime / value.TotalArtifacts;
-            value.AvgBlockTime = value.BlockTime / value.TotalArtifacts;
-            value.AvgReadyTime = value.ReadyTime / value.TotalArtifacts;
-            value.AvgReadyQueueTime = value.ReadyQueueTime / value.TotalArtifacts;
+            value.AvgLeadTime = value.TotalArtifacts > 0 ? value.LeadTime / value.TotalArtifacts : 0;
+            if(me.getArtifactType() == 'Feature'){
+                value.AvgBlockTime = value.TotalArtifacts > 0 ? value.c_BlockedTime / value.TotalArtifacts : 0;
+            }else{
+                value.AvgBlockTime = value.TotalArtifacts > 0 ? value.BlockTime / value.TotalArtifacts : 0;
+            }
+            value.AvgReadyTime = value.TotalArtifacts > 0 ? value.ReadyTime / value.TotalArtifacts : 0;
+            value.AvgReadyQueueTime = value.TotalArtifacts > 0 ? value.ReadyQueueTime / value.TotalArtifacts : 0;
             value.AvgCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime;
             value.AvgActiveCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime;
             results.push(value);
@@ -588,19 +603,24 @@
                 text: "Name",
                 flex: 2
             },
+        ];
+
+        if(me.getArtifactType() != 'Feature'){
+            cols.push(
             {
                 dataIndex: 'ScheduleState',
                 text: 'Schedule State',
                 flex: 1
-            }
-        ];
-
-        if(me.getArtifactType() == 'Defect'){
-            cols.push({
-                dataIndex: 'Priority',
-                text: 'Priority',
+            }            
+            );
+        }else{
+            cols.push(
+            {
+                dataIndex: 'Ready',
+                text: 'Ready',
                 flex: 1
-            });
+            }            
+            );
         }
         return cols.concat(this.getHistoricalDataColumns());
     },
@@ -755,7 +775,6 @@
 
                 var defect_filters  = [{
                      property: 'State',
-                     operator: '=',
                      value: 'Closed'
                 },{
                      property: 'Type',
@@ -765,11 +784,22 @@
 
                 filters = filters.and(Rally.data.wsapi.Filter.and(defect_filters));
 
-            }else{
+            } else if(me.getArtifactType() == 'Feature'){
+
+                var defect_filters  = Ext.create('Rally.data.wsapi.Filter', {
+                     property: 'State',
+                     value: 'Completed'
+                });
+
+                filters = filters.and(defect_filters);
+
+            } else {
+
                 var ready_filter = Ext.create('Rally.data.wsapi.Filter', {
                      property: 'Ready',
                      value: true
                 });
+                
                 filters = filters.and(ready_filter);      
             }
 
@@ -779,7 +809,7 @@
 
         Ext.Array.each(this.getSelectedProjects(),function(p){
             projectFilters.push({
-                                    property:'Project',
+                                    property: me.getArtifactType() == 'Feature' ? 'Parent':'Project',
                                     value:p
                                 });
         })
@@ -849,7 +879,7 @@
         return endStates;
     },
     getCurrentFetchList: function(){
-        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate','Priority'];
+        var fetch = ['ObjectID','Project','Blocked','Ready','Name','FormattedID','ScheduleState','AcceptedDate','Priority','Parent'];
 
         if (this.getStateField()){
             Ext.Array.merge(this.getStateField(), fetch);
@@ -1003,13 +1033,24 @@
         }
 
         if (this.getIncludeBlocked()){
-            columns.push({
-                xtype: 'timetemplatecolumn',
-                dataType: 'timeInStateData',
-                stateName: "Blocked",
-                text: this.getTimeInStateColumnHeader("Blocked"),
-                flex: 1
-            });
+            if(this.getArtifactType() == 'Feature'){
+                columns.push({
+                    xtype: 'timetemplatecolumn',
+                    dataType: 'timeInStateData',
+                    stateName: "c_Blocked",
+                    text: this.getTimeInStateColumnHeader("Blocked"),
+                    flex: 1
+                });                
+            }else{
+                columns.push({
+                    xtype: 'timetemplatecolumn',
+                    dataType: 'timeInStateData',
+                    stateName: "Blocked",
+                    text: this.getTimeInStateColumnHeader("Blocked"),
+                    flex: 1
+                });                
+            }
+
         }
 
         if (this.getIncludeReady()){
@@ -1088,7 +1129,20 @@
                 dataIndex: 'TotalP2Defects',
                 text:'Priority 2 Defects'
             });
-        }else{
+        }else if(me.getArtifactType() == 'Feature'){
+            columns.push({
+                dataIndex: 'ChildrenCount',
+                text:'User Stories'
+            },
+            {
+                dataIndex:'TotalArtifacts',
+                text:'Avg Story Count',
+                renderer: function(v,m,r){
+                    return r.get('TotalArtifacts') > 0 ? Ext.Number.toFixed(r.get('ChildrenCount')/r.get('TotalArtifacts'),1):0;
+                }
+
+            }); 
+        } else {
             columns.push({
                 dataIndex: 'TotalStories',
                 text:'User Stories'
