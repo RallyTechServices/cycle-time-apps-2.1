@@ -14,6 +14,42 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     stateful: true,
     stateId: 'cycleTimePanel',
     dateType:'',
+    defaultStates: {
+        "Artifact" : "User Story & Defect",
+        "UserStoryAndDefect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Defect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Feature" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Themes" : []
+        }
+    },
 
     constructor: function(config) {
         this.mergeConfig(config);
@@ -272,13 +308,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
 
 
-        // var parent_store = Ext.create('Rally.data.wsapi.Store', {
-        //                         model: picker_model,
-        //                         fetch: true,
-        //                         autoLoad: false,
-        //                         filters: picker_store_config
-        //                     });
-
         this.add({
                 xtype: 'rallymultiobjectpicker',
                 modelType: picker_model,
@@ -494,12 +523,135 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     updateCycleTimeParameters: function(){
         this.saveState();
+        //this._updateStatePreference()
         if (this.hasValidCycleTimeParameters()){
             this.fireEvent('parametersupdated', this.getCycleTimeParameters());
         } else {
             this.fireEvent('parametersupdated', {});
         }
     },
+
+
+    _updateStatePreference: function(){
+        // Load the existing states. if none, create a new one with the defaults.
+        this._queryPreferences().then({
+            scope:this,
+            success: function(records){
+                if(records.length > 0){
+                    this.statePrefernce = records && records[0];
+                    this._updatePreference(this.statePrefernce.get('ObjectID'))
+                }else{
+                    this._createPreference('cycletime-summary-states',JSON.stringify(this.defaultStates));
+                }
+            }
+        });
+        // update states
+        
+    },
+
+
+    _queryPreferences: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var wsapiConfig = {
+            model: 'Preference',
+            fetch: ['Name','Value','CreationDate','ObjectID'],
+            filters: [ { property: 'Name', operator: 'contains', value: 'cycletime-summary-states' } ],
+            sorters: [{property:'CreationDate', direction:'ASC'}],
+        };
+        this._loadWsapiRecords(wsapiConfig).then({
+            scope: this,
+            success: function(records) {
+                //console.log('Preference recs>>',records);
+                deferred.resolve(records);
+            },
+            failure: function(error_message){
+                alert(error_message);
+            }
+        }).always(function() {
+            me.setLoading(false);
+        });
+        return deferred.promise;
+    },
+
+    _loadWsapiRecords: function(config){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        //this.logger.log("Starting load:",config.model);
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    deferred.resolve(records);
+                } else {
+                    //me.logger.log("Failed: ", operation);
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+
+        return deferred.promise;
+    },
+
+    _createPreference: function(name,value) {
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           success: function(model) {
+               var pref = Ext.create(model, {
+                   Name: name,
+                   Value: value,
+                   User: Rally.getApp().getContext().getUser()._ref,
+                   Project: null
+               });
+
+               pref.save({
+                   callback: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference Created>>',preference);
+                            this.statePrefernce = preference.get('value');
+                            deferred.resolve(preference);
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
+
+    _updatePreference: function(id) {
+        var me = this;
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           success: function(model) {
+               model.load(id, {
+                    scope: this,
+                    success: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference>>',preference);
+                            preference.set('value',me.defaultStates);
+                            preference.save({
+                                success:function(preference){
+                                    console.log('Preference Updated>>',preference);
+                                    this.statePrefernce = preference.get('value');
+                                    deferred.resolve(preference);
+                                }
+                            })
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
     _isCycleTimeField: function(field){
         var whitelistFields = ['State','ScheduleState'];
 

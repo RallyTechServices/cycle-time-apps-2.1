@@ -39,10 +39,6 @@
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
        this.addSelectors();
-       // this.loadModels().then({
-       //      success: this.addSelectors(),
-       //      scope: this
-       //  });
     },
 
     loadModels: function() {
@@ -90,22 +86,6 @@
 
         this.getSelectorBoxRight().removeAll();
 
-
-
-        // if (!this.cycleTimePanel){
-        //     this.cycleTimePanel = this.getSelectorBox().add({
-        //         xtype: 'cycletimepickerpanel',
-        //         modelNames: this.getModelNames(),
-        //         models: this.models,
-        //         context: this.getContext(),
-        //         dateType: this.getSetting('dateType'),
-        //         flex: 1
-        //     });
-        //     this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
-        //     this.fireEvent('cycletimepickerready', this.cycleTimePanel);
-        // }
-
-
         var bt = this.getSelectorBoxRight().add({
             xtype: 'rallybutton',
             itemId: 'btUpdate',
@@ -130,7 +110,7 @@
         });
     },
 
-     showInstructionsDialog: function(btn){
+    showInstructionsDialog: function(btn){
          var popoverTarget = btn.getEl();
 
          this.popover = Ext.create('Rally.ui.popover.Popover', {
@@ -282,9 +262,6 @@
         var results = [];
         var cycle_states = me.getCycleStates();
         var ready_queue_end_value = me.getReqdyQueueStateValue();
-        // if(ready_queue_end_value == "(No State)"){
-        //     ready_queue_end_value = cycle_states[2]
-        // }
 
         if(me.getSetting('dateType') == 'LastNWeeks'){
 
@@ -382,7 +359,6 @@
             })            
         }
 
-//(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
         
 
@@ -397,8 +373,59 @@
             value.AvgReadyQueueTime = value.TotalArtifacts > 0 ? value.ReadyQueueTime / value.TotalArtifacts : 0;
             value.AvgCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime;
             value.AvgActiveCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime;
+
             results.push(value);
         })
+
+        me.overallSummaryData = {};
+
+        if(me.getSetting('dateType') == 'LastNWeeks'){
+            me.overallSummaryData.Week =  'Total';
+        }else{
+            me.overallSummaryData.Project =  'Total';
+        }
+
+        me.overallSummaryData.TotalArtifacts =  _.reduce(_.pluck(results, 'TotalArtifacts'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgLeadTime =  _.reduce(_.pluck(results, 'LeadTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgLeadTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgLeadTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgBlockTime =  _.reduce(_.pluck(results, me.getArtifactType() == 'Feature' ? 'c_BlockedTime' : 'BlockTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgBlockTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgBlockTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgReadyTime =  _.reduce(_.pluck(results, 'ReadyTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgReadyTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgReadyTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgReadyQueueTime =  _.reduce(_.pluck(results, 'ReadyQueueTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgReadyQueueTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgReadyQueueTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+        me.overallSummaryData.AvgCycleTime = Ext.Number.toFixed(me.overallSummaryData.AvgLeadTime - me.overallSummaryData.AvgReadyQueueTime,2);
+
+        me.overallSummaryData.AvgActiveCycleTime = Ext.Number.toFixed(me.overallSummaryData.AvgLeadTime - me.overallSummaryData.AvgReadyQueueTime - me.overallSummaryData.AvgBlockTime - me.overallSummaryData.AvgReadyTime,2);
+
+        console.log('me.overallSummaryData >>',me.overallSummaryData);
 
         var store_config = {
             data: results
@@ -413,25 +440,18 @@
 
         var store = Ext.create('Rally.data.custom.Store',store_config );
 
-         me.overallSummaryData = {};
-         if(me.getSetting('dateType') == 'LastNWeeks'){
-            me.overallSummaryData.Week =  'Total';
-         }else{
-            me.overallSummaryData.Project =  'Total';
-         }
-         me.overallSummaryData.AvgLeadTime = store.average('AvgLeadTime');
-         me.overallSummaryData.AvgCycleTime = store.average('AvgCycleTime');
-
         me.addSummaryGrid(store);
-        //me.addGrid(records);
 
         //adding the summary data to chart as well. 
+        me.addChart(results);
+
         me.results = results;
-        //console.log('haiya>>',me.overallSummaryData);
-        //me.addChart(results);
+
      },
 
     addChart: function(results){
+        var me = this;
+        results.unshift(me.overallSummaryData);
         var chartType = this.getSetting('chartType');
         if(chartType == 'line'){
             results.splice(results.length-1, 1);
@@ -472,10 +492,8 @@
                           }
                         }
                         });
-            // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
-            // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
+
         });
-        
         
         return { 
             series: [ 
@@ -536,12 +554,6 @@
             }],
             viewConfig: {
                 listeners: {
-                    refresh: function(gridview) {
-                        console.log(gridview);
-                        console.log('is fully loaded',gridview);
-                        me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
-                        me.addChart(me.results);
-                    },
                     cellclick: function(view, cell, cellIndex, record) {
                         me.showDrillDown(record);
                     },
@@ -638,7 +650,7 @@
     _create_csv: function(results){
         var me = this;
         if ( !results ) { return; }
-        
+        results.push(me.overallSummaryData);
         me.setLoading("Generating CSV");
 
         var CSV = "";    
@@ -658,7 +670,7 @@
 
         CSV += row + '\r\n';
         // Loop through tasks hash and create the csv 
-        Ext.Array.each(me.results,function(task){
+        Ext.Array.each(results,function(task){
             row = "";
             Ext.Array.each(columns,function(col){
                 row += task[col] ? task[col] + ',':',';
@@ -1105,7 +1117,7 @@
 
     getSummaryColumnCfgs: function(){
         var me = this;
-        me.overallSummaryData = {"Project":"Total"};
+        //me.overallSummaryData = {"Project":"Total"};
         var columns = [{
             dataIndex: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
             text: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
@@ -1164,8 +1176,8 @@
                 return value; 
             },            
             summaryRenderer: function(value, summaryData, dataIndex) {
-                me.overallSummaryData.AvgLeadTime = value;
-                return Ext.Number.toFixed(value,2); 
+                //me.overallSummaryData.AvgLeadTime = value;
+                return me.overallSummaryData.AvgLeadTime; 
             }
         },
         {
@@ -1179,7 +1191,7 @@
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgReadyQueueTime; 
             }
         },
         {
@@ -1193,8 +1205,8 @@
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                me.overallSummaryData.AvgCycleTime = value;                
-                return Ext.Number.toFixed(value,2); 
+                //me.overallSummaryData.AvgCycleTime = value;                
+                return me.overallSummaryData.AvgCycleTime; 
             }
         },
         {
@@ -1208,7 +1220,7 @@
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgActiveCycleTime;
             }
         },
         {
@@ -1222,7 +1234,7 @@
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgBlockTime;
             }
         },
         {
@@ -1236,7 +1248,7 @@
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgReadyTime;
             }
         });
 

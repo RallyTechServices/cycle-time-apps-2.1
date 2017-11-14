@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Nov 08 2017 20:44:02 GMT-0800 (PST) -->
+    <!--  Build Date: Tue Nov 14 2017 12:44:36 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Nov 08 2017 20:44:02 GMT-0800 (PST)";
+        var APP_BUILD_DATE = "Tue Nov 14 2017 12:44:36 GMT-0800 (PST)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 341596081452;
+        var CHECKSUM = 371397741037;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1383,6 +1383,42 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
     stateful: true,
     stateId: 'cycleTimePanel',
     dateType:'',
+    defaultStates: {
+        "Artifact" : "User Story & Defect",
+        "UserStoryAndDefect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Defect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Feature" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Themes" : []
+        }
+    },
 
     constructor: function(config) {
         this.mergeConfig(config);
@@ -1641,13 +1677,6 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
 
 
-        // var parent_store = Ext.create('Rally.data.wsapi.Store', {
-        //                         model: picker_model,
-        //                         fetch: true,
-        //                         autoLoad: false,
-        //                         filters: picker_store_config
-        //                     });
-
         this.add({
                 xtype: 'rallymultiobjectpicker',
                 modelType: picker_model,
@@ -1863,12 +1892,135 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
 
     updateCycleTimeParameters: function(){
         this.saveState();
+        //this._updateStatePreference()
         if (this.hasValidCycleTimeParameters()){
             this.fireEvent('parametersupdated', this.getCycleTimeParameters());
         } else {
             this.fireEvent('parametersupdated', {});
         }
     },
+
+
+    _updateStatePreference: function(){
+        // Load the existing states. if none, create a new one with the defaults.
+        this._queryPreferences().then({
+            scope:this,
+            success: function(records){
+                if(records.length > 0){
+                    this.statePrefernce = records && records[0];
+                    this._updatePreference(this.statePrefernce.get('ObjectID'))
+                }else{
+                    this._createPreference('cycletime-summary-states',JSON.stringify(this.defaultStates));
+                }
+            }
+        });
+        // update states
+        
+    },
+
+
+    _queryPreferences: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var wsapiConfig = {
+            model: 'Preference',
+            fetch: ['Name','Value','CreationDate','ObjectID'],
+            filters: [ { property: 'Name', operator: 'contains', value: 'cycletime-summary-states' } ],
+            sorters: [{property:'CreationDate', direction:'ASC'}],
+        };
+        this._loadWsapiRecords(wsapiConfig).then({
+            scope: this,
+            success: function(records) {
+                //console.log('Preference recs>>',records);
+                deferred.resolve(records);
+            },
+            failure: function(error_message){
+                alert(error_message);
+            }
+        }).always(function() {
+            me.setLoading(false);
+        });
+        return deferred.promise;
+    },
+
+    _loadWsapiRecords: function(config){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        //this.logger.log("Starting load:",config.model);
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    deferred.resolve(records);
+                } else {
+                    //me.logger.log("Failed: ", operation);
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+
+        return deferred.promise;
+    },
+
+    _createPreference: function(name,value) {
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           success: function(model) {
+               var pref = Ext.create(model, {
+                   Name: name,
+                   Value: value,
+                   User: Rally.getApp().getContext().getUser()._ref,
+                   Project: null
+               });
+
+               pref.save({
+                   callback: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference Created>>',preference);
+                            this.statePrefernce = preference.get('value');
+                            deferred.resolve(preference);
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
+
+    _updatePreference: function(id) {
+        var me = this;
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           success: function(model) {
+               model.load(id, {
+                    scope: this,
+                    success: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference>>',preference);
+                            preference.set('value',me.defaultStates);
+                            preference.save({
+                                success:function(preference){
+                                    console.log('Preference Updated>>',preference);
+                                    this.statePrefernce = preference.get('value');
+                                    deferred.resolve(preference);
+                                }
+                            })
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
     _isCycleTimeField: function(field){
         var whitelistFields = ['State','ScheduleState'];
 
@@ -2282,10 +2434,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
        this.addSelectors();
-       // this.loadModels().then({
-       //      success: this.addSelectors(),
-       //      scope: this
-       //  });
     },
 
     loadModels: function() {
@@ -2333,22 +2481,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         this.getSelectorBoxRight().removeAll();
 
-
-
-        // if (!this.cycleTimePanel){
-        //     this.cycleTimePanel = this.getSelectorBox().add({
-        //         xtype: 'cycletimepickerpanel',
-        //         modelNames: this.getModelNames(),
-        //         models: this.models,
-        //         context: this.getContext(),
-        //         dateType: this.getSetting('dateType'),
-        //         flex: 1
-        //     });
-        //     this.relayedEvents = this.relayEvents(this.cycleTimePanel, ['expand', 'collapse', 'panelresize', 'parametersupdated']);
-        //     this.fireEvent('cycletimepickerready', this.cycleTimePanel);
-        // }
-
-
         var bt = this.getSelectorBoxRight().add({
             xtype: 'rallybutton',
             itemId: 'btUpdate',
@@ -2373,7 +2505,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
         });
     },
 
-     showInstructionsDialog: function(btn){
+    showInstructionsDialog: function(btn){
          var popoverTarget = btn.getEl();
 
          this.popover = Ext.create('Rally.ui.popover.Popover', {
@@ -2525,9 +2657,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
         var results = [];
         var cycle_states = me.getCycleStates();
         var ready_queue_end_value = me.getReqdyQueueStateValue();
-        // if(ready_queue_end_value == "(No State)"){
-        //     ready_queue_end_value = cycle_states[2]
-        // }
 
         if(me.getSetting('dateType') == 'LastNWeeks'){
 
@@ -2625,7 +2754,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             })            
         }
 
-//(snapshots, this.stateField, this.fromState, this.toState, this.stateValues);
         this.logger.log('cycle_time_summary>>',cycle_time_summary);
         
 
@@ -2640,8 +2768,59 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             value.AvgReadyQueueTime = value.TotalArtifacts > 0 ? value.ReadyQueueTime / value.TotalArtifacts : 0;
             value.AvgCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime;
             value.AvgActiveCycleTime = value.AvgLeadTime - value.AvgReadyQueueTime - value.AvgBlockTime - value.AvgReadyTime;
+
             results.push(value);
         })
+
+        me.overallSummaryData = {};
+
+        if(me.getSetting('dateType') == 'LastNWeeks'){
+            me.overallSummaryData.Week =  'Total';
+        }else{
+            me.overallSummaryData.Project =  'Total';
+        }
+
+        me.overallSummaryData.TotalArtifacts =  _.reduce(_.pluck(results, 'TotalArtifacts'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgLeadTime =  _.reduce(_.pluck(results, 'LeadTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgLeadTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgLeadTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgBlockTime =  _.reduce(_.pluck(results, me.getArtifactType() == 'Feature' ? 'c_BlockedTime' : 'BlockTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgBlockTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgBlockTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgReadyTime =  _.reduce(_.pluck(results, 'ReadyTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgReadyTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgReadyTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+
+        me.overallSummaryData.AvgReadyQueueTime =  _.reduce(_.pluck(results, 'ReadyQueueTime'), function(sum, num) {
+                                                        return sum + num;
+                                                    });
+
+
+        me.overallSummaryData.AvgReadyQueueTime = Ext.Number.toFixed(me.overallSummaryData.TotalArtifacts > 0 ? me.overallSummaryData.AvgReadyQueueTime / me.overallSummaryData.TotalArtifacts : 0,2);
+
+        me.overallSummaryData.AvgCycleTime = Ext.Number.toFixed(me.overallSummaryData.AvgLeadTime - me.overallSummaryData.AvgReadyQueueTime,2);
+
+        me.overallSummaryData.AvgActiveCycleTime = Ext.Number.toFixed(me.overallSummaryData.AvgLeadTime - me.overallSummaryData.AvgReadyQueueTime - me.overallSummaryData.AvgBlockTime - me.overallSummaryData.AvgReadyTime,2);
+
+        console.log('me.overallSummaryData >>',me.overallSummaryData);
 
         var store_config = {
             data: results
@@ -2656,25 +2835,18 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         var store = Ext.create('Rally.data.custom.Store',store_config );
 
-         me.overallSummaryData = {};
-         if(me.getSetting('dateType') == 'LastNWeeks'){
-            me.overallSummaryData.Week =  'Total';
-         }else{
-            me.overallSummaryData.Project =  'Total';
-         }
-         me.overallSummaryData.AvgLeadTime = store.average('AvgLeadTime');
-         me.overallSummaryData.AvgCycleTime = store.average('AvgCycleTime');
-
         me.addSummaryGrid(store);
-        //me.addGrid(records);
 
         //adding the summary data to chart as well. 
+        me.addChart(results);
+
         me.results = results;
-        //console.log('haiya>>',me.overallSummaryData);
-        //me.addChart(results);
+
      },
 
     addChart: function(results){
+        var me = this;
+        results.unshift(me.overallSummaryData);
         var chartType = this.getSetting('chartType');
         if(chartType == 'line'){
             results.splice(results.length-1, 1);
@@ -2715,10 +2887,8 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                           }
                         }
                         });
-            // active.push(Ext.util.Format.round(value.AvgActiveCycleTime,2));
-            // ready_queue.push(Ext.util.Format.round(value.AvgReadyQueueTime,2));
+
         });
-        
         
         return { 
             series: [ 
@@ -2779,12 +2949,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             }],
             viewConfig: {
                 listeners: {
-                    refresh: function(gridview) {
-                        console.log(gridview);
-                        console.log('is fully loaded',gridview);
-                        me.results.unshift({"Project":"Total","Week":"Total","AvgLeadTime":gridview.summaryFeature.summaryRecord.data.AvgLeadTime,"AvgCycleTime":gridview.summaryFeature.summaryRecord.data.AvgCycleTime});
-                        me.addChart(me.results);
-                    },
                     cellclick: function(view, cell, cellIndex, record) {
                         me.showDrillDown(record);
                     },
@@ -2881,7 +3045,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
     _create_csv: function(results){
         var me = this;
         if ( !results ) { return; }
-        
+        results.push(me.overallSummaryData);
         me.setLoading("Generating CSV");
 
         var CSV = "";    
@@ -2901,7 +3065,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         CSV += row + '\r\n';
         // Loop through tasks hash and create the csv 
-        Ext.Array.each(me.results,function(task){
+        Ext.Array.each(results,function(task){
             row = "";
             Ext.Array.each(columns,function(col){
                 row += task[col] ? task[col] + ',':',';
@@ -3348,7 +3512,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
     getSummaryColumnCfgs: function(){
         var me = this;
-        me.overallSummaryData = {"Project":"Total"};
+        //me.overallSummaryData = {"Project":"Total"};
         var columns = [{
             dataIndex: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
             text: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
@@ -3407,8 +3571,8 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },            
             summaryRenderer: function(value, summaryData, dataIndex) {
-                me.overallSummaryData.AvgLeadTime = value;
-                return Ext.Number.toFixed(value,2); 
+                //me.overallSummaryData.AvgLeadTime = value;
+                return me.overallSummaryData.AvgLeadTime; 
             }
         },
         {
@@ -3422,7 +3586,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgReadyQueueTime; 
             }
         },
         {
@@ -3436,8 +3600,8 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                me.overallSummaryData.AvgCycleTime = value;                
-                return Ext.Number.toFixed(value,2); 
+                //me.overallSummaryData.AvgCycleTime = value;                
+                return me.overallSummaryData.AvgCycleTime; 
             }
         },
         {
@@ -3451,7 +3615,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgActiveCycleTime;
             }
         },
         {
@@ -3465,7 +3629,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgBlockTime;
             }
         },
         {
@@ -3479,7 +3643,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                 return value; 
             },
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return Ext.Number.toFixed(value,2); 
+                return me.overallSummaryData.AvgReadyTime;
             }
         });
 
