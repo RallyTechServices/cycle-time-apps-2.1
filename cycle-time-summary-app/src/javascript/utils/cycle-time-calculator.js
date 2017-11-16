@@ -17,16 +17,15 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                 readyQueueStateValue = "";
         }
 
-        var inState = snapshots[0][field] === value,
-            startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+        // var inState = snapshots[0][field] === value,
+        //     startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
 
         var info = [],
             idx = 0;
 
-        if (startTime){
-            info[idx] = [startTime]
-        }
-        var acceptedDate;
+        // if (startTime){
+        //     info[idx] = [startTime]
+        // }
 
         Ext.Array.each(snapshots, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);

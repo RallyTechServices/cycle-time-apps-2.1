@@ -88,6 +88,14 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
                 inputValue: "line",
                 checked: "line" === settings.chartType
             }]
+        },{
+                xtype: 'rallyprojectcombobox',
+                name: 'defectBacklogProject',
+                fieldLabel: 'Defect Backlog Project',
+                labelAlign: 'right',
+                labelWidth: 100,
+                width: 300,
+                allowBlank: false
         }
         ,{
             xtype: 'textarea',
