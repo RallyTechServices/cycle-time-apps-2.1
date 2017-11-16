@@ -8,6 +8,44 @@
         labelAlign: 'right'
     },
 
+
+    defaultStates: {
+        "Artifact" : "User Story & Defect",
+        "UserStoryAndDefect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Defect" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Projects" : []
+        },
+        "Feature" : {
+            "WorkflowState": "BF Development State",
+            "StateFrom" : "(No State)",
+            "StateTo" : "Accepting",
+            "ReadyQueueColumn" : "(No State)",
+            "StartDate" : "",
+            "EndDate" : "",
+            "LastNWeeks" : "3",
+            "LastNMonths" : "3",
+            "Themes" : []
+        }
+    },
+
     instructions: 'Please select the criteria for report and click update to see the report',
 
     items: [
@@ -38,7 +76,12 @@
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addSelectors();
+       this._queryStatePreference().then({
+            scope: this,
+            success: function(preference){
+                this.addSelectors();
+            }
+       });
     },
 
     loadModels: function() {
@@ -64,6 +107,7 @@
         }
         Rally.ui.notify.Notifier.showError({message: msg});
     },
+
     addSelectors: function(){
 
         this.getSelectorBox().removeAll();
@@ -77,6 +121,7 @@
             context: this.getContext(),
             dateType : this.getSetting('dateType'),
             margin: '3 9 0 0',
+            preferenceStates: this.defaultStates,
             listeners: {
                 cycletimepickerready: this.addCycleTimePanel,
                 scope: this,
@@ -212,27 +257,36 @@
          this.getMessageBox().update({message: msg});
      },
      updateGrid: function(){
+        
+        // update states preferences before getting the data.
+        this._setDefaultStateValues(this._gridConfig.cycleTimeParameters);
+        this._updatePreference(this.statePreference.get('ObjectID')).then({
+            scope:this,
+            success: function(result){
+                if(this.getSelectedProjects().length == 0){
+                    this.updateMessageBox("No project selected select one or more projects to display the Summary",'red');
+                    return;
+                }
 
-        if(this.getSelectedProjects().length == 0){
-            this.updateMessageBox("No project selected select one or more projects to display the Summary",'red');
-            return;
-        }
+                 CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
+                 CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
+                 CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
+                 CArABU.technicalservices.CycleTimeCalculator.granularity = this.getSetting('granularity');
 
-         CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
-         CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
-         CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
-         CArABU.technicalservices.CycleTimeCalculator.granularity = this.getSetting('granularity');
+                 this.getGridBox().removeAll();
+                 this.updateMessageBox();
+                 //this.setUpdateButtonUpdateable(false);
+                 this.setLoading('Loading Current Data...');
 
-         this.getGridBox().removeAll();
-         this.updateMessageBox();
-         //this.setUpdateButtonUpdateable(false);
-         this.setLoading('Loading Current Data...');
+                 this.fetchWsapiArtifactData().then({
+                     success: this.buildCycleGrid,
+                     failure: this.showErrorNotification,
+                     scope: this
+                 }).always(function(){ this.setLoading(false);}, this);                
+            }
+        });
 
-         this.fetchWsapiArtifactData().then({
-             success: this.buildCycleGrid,
-             failure: this.showErrorNotification,
-             scope: this
-         }).always(function(){ this.setLoading(false);}, this);
+        
      },
      buildCycleGrid: function(records){
         this.logger.log('buildCycleGrid', records);
@@ -250,7 +304,7 @@
                  this.addGrid(records);
              }
          } else {
-             //there's a message, the need to refine the data.
+             this.showErrorNotification("No Data found for the given criteria");
          }
      },
 
@@ -292,6 +346,7 @@
 
             Ext.Object.each(cycle_time_summary,function(key,value){
                 Ext.Array.each(records,function(artifact){
+                //cycle_time_summary[key].Project = me.getArtifactType() == 'Feature' ? artifact.get('Parent').Name : artifact.get('Project').Name;
                 if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
                     if(artifact.get('cycleTimeData') && artifact.get('cycleTimeData').endDate && Ext.Date.between(artifact.get('cycleTimeData').endDate, value.StartDate, value.EndDate)){
                         var ready_queue_cycle_time = CArABU.technicalservices.CycleTimeCalculator.getCycleTimeData(artifact.get('cycleTimeData').snaps,me.getStateField(),me.getReqdyQueueStateValue(),ready_queue_end_value,cycle_states,me.getSelectedProjectOids(),me.getStateField(),me.getToStateValue());
@@ -454,7 +509,7 @@
         results.unshift(me.overallSummaryData);
         var chartType = this.getSetting('chartType');
         if(chartType == 'line'){
-            results.splice(results.length-1, 1);
+            results.splice(0, 1);
         }
         this.getGridBox().add({
             xtype:'rallychart',
@@ -475,12 +530,13 @@
         var ready_queue = [];
 
         Ext.Array.each(results, function(value){
-            categories.push(me.getSetting('dateType') == 'LastNWeeks' ? value.Week:value.Project);
+            var category = me.getSetting('dateType') == 'LastNWeeks' ? value.Week:value.Project;
+            categories.push(category);
             lead.push({
                         y: Ext.util.Format.round(value.AvgLeadTime,2),
                         events: {
                           click: function() {
-                              me.showDrillDown(value);
+                              me.showDrillDown(value,category);
                           }
                         }
                        });
@@ -488,7 +544,7 @@
                         y: Ext.util.Format.round(value.AvgCycleTime,2),
                         events: {
                           click: function() {
-                              me.showDrillDown(value);
+                              me.showDrillDown(value,category);
                           }
                         }
                         });
@@ -555,7 +611,11 @@
             viewConfig: {
                 listeners: {
                     cellclick: function(view, cell, cellIndex, record) {
-                        me.showDrillDown(record);
+                        var title = record.Project || record.get('Project');
+                        if(me.getSetting('dateType') == 'LastNWeeks'){
+                            title = record.Week || record.get('Week');
+                        }
+                        me.showDrillDown(record,title);
                     },
                     scope:me
                 }
@@ -566,7 +626,7 @@
      },
 
 
-    showDrillDown: function(record) {
+    showDrillDown: function(record, title) {
         var me = this;
         
         console.log(record);
@@ -578,7 +638,7 @@
         
         Ext.create('Rally.ui.dialog.Dialog', {
             id        : 'detailPopup',
-            title     : 'Artifacts for ' + record.Project || record.get('Project'),
+            title     : 'Artifacts for ' + title,
             width     : Ext.getBody().getWidth() - 50,
             height    : Ext.getBody().getHeight() - 50,
             closable  : true,
@@ -1257,6 +1317,168 @@
     },
 
 
+    _setDefaultStateValues: function(cyt_params){
+        var me = this;
+        me.defaultStates.Artifact = cyt_params.artifactType;
+
+        if(cyt_params.artifactType == "User Story & Defect"){
+            me.defaultStates.UserStoryAndDefect.WorkflowState = cyt_params.cycleStateField;
+            me.defaultStates.UserStoryAndDefect.StateFrom = cyt_params.cycleStartState;
+            me.defaultStates.UserStoryAndDefect.StateTo = cyt_params.cycleEndState;
+            me.defaultStates.UserStoryAndDefect.ReadyQueueColumn = cyt_params.cycleReadyQueueState;
+            me.defaultStates.UserStoryAndDefect.StartDate = cyt_params.startDate;
+            me.defaultStates.UserStoryAndDefect.EndDate = cyt_params.endDate;
+            me.defaultStates.UserStoryAndDefect.LastNWeeks = cyt_params.lastNWeeks;
+            me.defaultStates.UserStoryAndDefect.LastNMonths = cyt_params.lastNMonths;
+            me.defaultStates.UserStoryAndDefect.Projects = cyt_params.projects;
+        }else {
+            me.defaultStates[cyt_params.artifactType].WorkflowState = cyt_params.cycleStateField;
+            me.defaultStates[cyt_params.artifactType].StateFrom = cyt_params.cycleStartState;
+            me.defaultStates[cyt_params.artifactType].StateTo = cyt_params.cycleEndState;
+            me.defaultStates[cyt_params.artifactType].ReadyQueueColumn = cyt_params.cycleReadyQueueState;
+            me.defaultStates[cyt_params.artifactType].StartDate = cyt_params.startDate;
+            me.defaultStates[cyt_params.artifactType].EndDate = cyt_params.endDate;
+            me.defaultStates[cyt_params.artifactType].LastNWeeks = cyt_params.lastNWeeks;
+            me.defaultStates[cyt_params.artifactType].LastNMonths = cyt_params.lastNMonths;
+            me.defaultStates[cyt_params.artifactType].Projects = cyt_params.projects;
+        }
+    },
+
+    _queryStatePreference: function(){
+        var deferred = Ext.create('Deft.Deferred');
+
+        // Load the existing states. if none, create a new one with the defaults.
+        this._queryPreferences().then({
+            scope:this,
+            success: function(records){
+                if(records.length > 0){
+                    this.statePreference = records && records[0];
+                    this.defaultStates = records && records[0] && JSON.parse(records[0].get('Value'));
+                    deferred.resolve(this.statePreference);
+                }else{
+                    this._createPreference('cycletime-summary-states-xxx',JSON.stringify(this.defaultStates)).then({
+                        scope:this,
+                        success: function(result){
+                            deferred.resolve(result);
+                        }
+                    });
+                }
+            }
+        });
+        return deferred.promise;
+
+        // update states
+    },
+
+
+    _queryPreferences: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var wsapiConfig = {
+            model: 'Preference',
+            fetch: ['Name','Value','CreationDate','ObjectID'],
+            filters: [ { property: 'Name', operator: 'contains', value: 'cycletime-summary-states-xxx' } ],
+            sorters: [{property:'CreationDate', direction:'ASC'}],
+        };
+        this._loadWsapiRecords(wsapiConfig).then({
+            scope: this,
+            success: function(records) {
+                //console.log('Preference recs>>',records);
+                deferred.resolve(records);
+            },
+            failure: function(error_message){
+                alert(error_message);
+            }
+        }).always(function() {
+            me.setLoading(false);
+        });
+        return deferred.promise;
+    },
+
+    _loadWsapiRecords: function(config){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        //this.logger.log("Starting load:",config.model);
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    deferred.resolve(records);
+                } else {
+                    //me.logger.log("Failed: ", operation);
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+
+        return deferred.promise;
+    },
+
+    _createPreference: function(name,value) {
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           success: function(model) {
+               var pref = Ext.create(model, {
+                   Name: name,
+                   Value: value,
+                   User: Rally.getApp().getContext().getUser()._ref,
+                   Project: null
+               });
+
+               pref.save({
+                   callback: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference Created>>',preference);
+                            this.statePreference = preference;
+                            this.defaultStates = JSON.parse(preference.get('Value'));
+                            deferred.resolve(preference);
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
+
+    _updatePreference: function(id) {
+       var me = this;
+       var deferred = Ext.create('Deft.Deferred');
+       Rally.data.ModelFactory.getModel({
+           type: 'Preference',
+           scope:me,
+           success: function(model) {
+               model.load(id, {
+                    scope: me,
+                    success: function(preference, operation) {
+                       if(operation.wasSuccessful()) {
+                            console.log('Preference>>',preference);
+                            preference.set('Value',JSON.stringify(me.defaultStates));
+                            preference.save({
+                                scope:me,
+                                success:function(preference){
+                                    console.log('Preference Updated>>',preference);
+                                    me.statePreference = preference;
+                                    me.defaultStates = JSON.parse(preference.get('Value'));
+                                    deferred.resolve(preference);
+                                }
+                            })
+                       }
+                   }
+               });
+            }
+        });
+
+        return deferred.promise;
+    },
+
+
+
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){
@@ -1298,10 +1520,16 @@
     },
 
     getSelectedProjectOids: function(){
+        var me = this;
         var projects_refs =  [];
         Ext.Array.each(this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.projects, function(project){
             projects_refs.push(Rally.util.Ref.getOidFromRef(project));
         });
+        //adding the backlog project to the list if its a Defect.
+        if(me.getArtifactType() == 'Defect'){
+            projects_refs.push(Rally.util.Ref.getOidFromRef(me.getSetting('defectBacklogProject')))
+        }
+        //console.log('getSelectedProjectOids >>>',projects_refs);
         return projects_refs;
     },
 
