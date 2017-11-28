@@ -8,7 +8,6 @@
         labelAlign: 'right'
     },
 
-
     defaultStates: {
         "Artifact" : "User Story & Defect",
         "UserStoryAndDefect" : {
@@ -117,6 +116,7 @@
 
         var ctButton = this.getSelectorBox().add({
             xtype: 'cycletimepickerbutton',
+            itemId: 'cyt_picker_button',
             modelNames: this.getModelNames(),
             context: this.getContext(),
             dateType : this.getSetting('dateType'),
@@ -136,9 +136,17 @@
             itemId: 'btUpdate',
             text: 'Update',
             width: 100,
-            margin: '3 9 0 0'
+            margin: '3 9 0 0',
+            listeners:{
+                click: function(){
+                    ctButton.fireEvent('cycletimeparametersupdated', ctButton);
+                    this.updateGrid();
+                    this.getSelectorBox().doLayout();
+                },
+                scope:this
+            }
         });
-        bt.on('click', this.updateGrid, this);
+        //bt.on('click', this.updateGrid, this);
 
         this.getSelectorBoxRight().add({
             xtype: 'rallybutton',
@@ -1457,7 +1465,7 @@
                     scope: me,
                     success: function(preference, operation) {
                        if(operation.wasSuccessful()) {
-                            console.log('Preference>>',preference);
+                            console.log('Preference>>',preference,me.defaultStates);
                             preference.set('Value',JSON.stringify(me.defaultStates));
                             preference.save({
                                 scope:me,
