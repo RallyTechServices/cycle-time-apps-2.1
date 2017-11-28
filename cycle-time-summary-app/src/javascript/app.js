@@ -286,11 +286,24 @@
                  //this.setUpdateButtonUpdateable(false);
                  this.setLoading('Loading Current Data...');
 
-                 this.fetchWsapiArtifactData().then({
+                 
+
+                Deft.Promise.all([
+                    this._loadWsapiRecords(this.getProjectConfig()),
+                    this.fetchWsapiArtifactData() 
+                ],this).then({
                      success: this.buildCycleGrid,
                      failure: this.showErrorNotification,
                      scope: this
-                 }).always(function(){ this.setLoading(false);}, this);                
+                 }).always(function(){ this.setLoading(false);}, this);  
+
+
+
+                 // this.fetchWsapiArtifactData().then({
+                 //     success: this.buildCycleGrid,
+                 //     failure: this.showErrorNotification,
+                 //     scope: this
+                 // }).always(function(){ this.setLoading(false);}, this);                
             }
         });
 
@@ -298,23 +311,46 @@
      },
      buildCycleGrid: function(records){
         this.logger.log('buildCycleGrid', records);
+        
+        this.projectData = records[0];
 
-         if (records && records.length > 0){
+         if (records[1] && records[1].length > 0){
              if (this.calculateCycleTime()){
                  this.setLoading('Loading Historical data...')
-                 this.fetchHistoricalData(records).then({
+                 this.fetchHistoricalData(records[1]).then({
                      //success: this.addGrid,
                      success: this.calculateSummary,
                      failure: this.showErrorNotification,
                      scope: this
                  }).always(function(){ this.setLoading(false);}, this);
              } else {
-                 this.addGrid(records);
+                 this.addGrid(records[1]);
              }
          } else {
              this.showErrorNotification("No Data found for the given criteria");
          }
      },
+
+
+    getProjectConfig: function(){
+        var me = this;
+        var deferred = Ext.create('Deft.Deferred');
+        var filters = [];
+        Ext.Array.each(me.getSelectedProjects(),function(p){
+            filters.push({
+                property:'ObjectID',
+                value:Rally.util.Ref.getOidFromRef(p)
+            });
+        })
+
+        var config = {
+            model : me.getArtifactType() == 'Feature' ? 'PortfolioItem/Theme' : 'Project',
+            fetch : ['Name'],
+            filters: Rally.data.wsapi.Filter.or(filters)
+        }
+
+        return config;
+    },
 
      calculateSummary: function(records){
         var me = this;
@@ -380,6 +416,25 @@
 
         }else{
             // Calculate the averages for each project
+
+            Ext.Array.each(this.projectData, function(project){
+                cycle_time_summary[project.get('ObjectID')] = {
+
+                    "Project" : project.get('Name'),
+                    "LeadTime" : 0,
+                    "ReadyQueueTime" : 0,
+                    "BlockTime": 0,
+                    "c_BlockedTime": 0,
+                    "ReadyTime": 0,
+                    "TotalArtifacts" : 0,
+                    "ChildrenCount": 0,
+                    "TotalStories": 0,
+                    "TotalDefects": 0,
+                    "TotalP1Defects": 0,
+                    "TotalP2Defects": 0,
+                    "Records": []
+                }
+            });
 
             Ext.Array.each(records,function(artifact){
                 if(Ext.Number.from(artifact.get('cycleTimeData').cycleTime,0) > 0){
@@ -1186,9 +1241,10 @@
     getSummaryColumnCfgs: function(){
         var me = this;
         //me.overallSummaryData = {"Project":"Total"};
+        var type = me.getArtifactType() == 'Feature' ? 'Theme' : 'Project';
         var columns = [{
             dataIndex: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
-            text: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : 'Project',
+            text: me.getSetting('dateType') == 'LastNWeeks' ? 'Week' : type,
             summaryRenderer: function() {
                 return "Total"; 
             },
