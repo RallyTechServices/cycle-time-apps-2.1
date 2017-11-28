@@ -17,15 +17,8 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                 readyQueueStateValue = "";
         }
 
-        // var inState = snapshots[0][field] === value,
-        //     startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
-
         var info = [],
             idx = 0;
-
-        // if (startTime){
-        //     info[idx] = [startTime]
-        // }
 
         Ext.Array.each(snapshots, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
@@ -52,8 +45,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
 
     getCycleTimeData: function(snaps, field, startValue, endValue, precedence,projectIds,stateField, toState){
-        //console.log('getCycleTimeData ',snaps, field, startValue, endValue, precedence,projectIds,stateField, toState);
-        //findout valid states
+
         var validStates = [];
         var add = false;
         Ext.Array.each(precedence, function(state){
@@ -73,8 +65,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         var startDate, endDate, initalStartDate;
         Ext.each(snaps, function(snap){
              if (snap[field] != null  && Ext.Array.contains(validStates,snap[field]) && (Ext.Array.contains(projectIds, snap.Parent) || Ext.Array.contains(projectIds, snap.Project))){
-                //Exclude if Accepting and Ready
-                //if(!((snap[stateField] == toState && snap['Ready'])  || snap['ScheduleState'] == 'Accepted' || snap['ScheduleState'] == 'Deployed')){
                 if(!(snap[stateField] == toState && snap['Ready'])){
                     if(!startDate){
                         initalStartDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
@@ -85,7 +75,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                     }else{
                         endDate = Rally.util.DateTime.fromIsoString(snap._ValidTo);
                     }
-                   // console.log(snap[field],snap._ValidFrom,snap._ValidTo);
                     cycleTime += Rally.util.DateTime.getDifference(endDate,startDate,'second');
                 }
 
