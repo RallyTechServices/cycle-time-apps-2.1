@@ -3,13 +3,13 @@
 <head>
     <title>cycle-time-summary-app</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Nov 28 2017 15:53:48 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Nov 29 2017 15:52:28 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Nov 28 2017 15:53:48 GMT-0800 (PST)";
+        var APP_BUILD_DATE = "Wed Nov 29 2017 15:52:28 GMT-0800 (PST)";
         var STORY    = "F361";
         var BUILDER  = "rajan08";
-        var CHECKSUM = 416668039031;
+        var CHECKSUM = 414454703148;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -2531,7 +2531,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                  this.getGridBox().removeAll();
                  this.updateMessageBox();
                  //this.setUpdateButtonUpdateable(false);
-                 this.setLoading('Loading Current Data...');
+                 this.setLoading('Loading Data...');
 
                  
 
@@ -2542,15 +2542,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
                      success: this.buildCycleGrid,
                      failure: this.showErrorNotification,
                      scope: this
-                 }).always(function(){ this.setLoading(false);}, this);  
-
-
-
-                 // this.fetchWsapiArtifactData().then({
-                 //     success: this.buildCycleGrid,
-                 //     failure: this.showErrorNotification,
-                 //     scope: this
-                 // }).always(function(){ this.setLoading(false);}, this);                
+                 });
             }
         });
 
@@ -2565,7 +2557,6 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
              if (this.calculateCycleTime()){
                  this.setLoading('Loading Historical data...')
                  this.fetchHistoricalData(records[1]).then({
-                     //success: this.addGrid,
                      success: this.calculateSummary,
                      failure: this.showErrorNotification,
                      scope: this
