@@ -284,7 +284,7 @@
                  this.getGridBox().removeAll();
                  this.updateMessageBox();
                  //this.setUpdateButtonUpdateable(false);
-                 this.setLoading('Loading Current Data...');
+                 this.setLoading('Loading Data...');
 
                  
 
@@ -295,15 +295,7 @@
                      success: this.buildCycleGrid,
                      failure: this.showErrorNotification,
                      scope: this
-                 }).always(function(){ this.setLoading(false);}, this);  
-
-
-
-                 // this.fetchWsapiArtifactData().then({
-                 //     success: this.buildCycleGrid,
-                 //     failure: this.showErrorNotification,
-                 //     scope: this
-                 // }).always(function(){ this.setLoading(false);}, this);                
+                 });
             }
         });
 
@@ -318,7 +310,6 @@
              if (this.calculateCycleTime()){
                  this.setLoading('Loading Historical data...')
                  this.fetchHistoricalData(records[1]).then({
-                     //success: this.addGrid,
                      success: this.calculateSummary,
                      failure: this.showErrorNotification,
                      scope: this
