@@ -98,6 +98,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         granularity = granularity.toLowerCase();
         if (granularity === 'minute'){ return 60; }
         if (granularity === 'hour') { return 3600; }
+        if (granularity === 'week') { return 604800; }
         return 86400;  //default to day
     },
     calculateTimeInState: function(dateArrays){

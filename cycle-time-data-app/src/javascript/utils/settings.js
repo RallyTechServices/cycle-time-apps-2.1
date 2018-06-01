@@ -1,9 +1,7 @@
 Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
     singleton: true,
 
-    getFields: function(modelNames){
-        var includeUS = Ext.Array.contains(modelNames, 'HierarchicalRequirement'),
-            includeDefect = Ext.Array.contains(modelNames, 'Defect');
+    getFields: function(settings){
 
         var filters = [{
             property: 'TypePath',
@@ -19,7 +17,8 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         filters = Rally.data.wsapi.Filter.or(filters);
 
 
-        return [{
+        return [
+        {
             xtype: 'rallycombobox',
             name: 'artifactType',
             storeConfig: {
@@ -34,32 +33,40 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             labelWidth: 100,
             valueField: 'TypePath',
             displayField: 'DisplayName'
-            //msgTarget: 'under',
-            //validateOnChange: true,
-            //items: items,
-            //validator: function(value) {
-            //    if (!value || value.length ===0){
-            //        return "At least 1 artifact type must be selected";
-            //    }
-            //},
-            //margin: '0 0 50 0'
-            //xtype: 'checkboxgroup',
-            //fieldLabel: 'Include Types',
-            //columns: 1,
-            //vertical: true,
-            //allowBlank: false,
-            //labelAlign: 'right',
-            //labelWidth: 100,
-            //msgTarget: 'under',
-            //validateOnChange: true,
-            //items: items,
-            //validator: function(value) {
-            //    if (!value || value.length ===0){
-            //        return "At least 1 artifact type must be selected";
-            //    }
-            //},
-            //margin: '0 0 50 0'
-        },{
+        },
+        {
+            xtype: 'radiogroup',
+            fieldLabel: 'Granularity',
+            columns: 1,
+            vertical: true,
+            labelAlign: 'top',
+            layout: 'hbox',
+            labelWidth: 100,
+            width:300,
+            labelCls: 'settingsLabel',
+            items: [{
+                boxLabel: "Week",
+                name: 'granularity',
+                inputValue: "week",
+                checked: "week" === settings.granularity
+            },{
+                boxLabel: "Day",
+                name: 'granularity',
+                inputValue: "day",
+                checked: "day" === settings.granularity
+            }, {
+                boxLabel: "Hour",
+                name: 'granularity',
+                inputValue: "hour",
+                checked: "hour" === settings.granularity
+            }, {
+                boxLabel: "Minute",
+                name: 'granularity',
+                inputValue: "minute",
+                checked: "minute" === settings.granularity
+            } ]
+        },
+        {
             xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
             name: 'exportLimit',

@@ -9,3 +9,4 @@ deploy/app.min.js
 .settings
 deploy/ConfluenceApp.txt
 deploy/ExternalApp.txt
+package-lock.json

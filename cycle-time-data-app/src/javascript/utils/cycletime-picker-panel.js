@@ -70,7 +70,50 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 scope: this
             }
         });
-        this.add({
+
+
+        // var filters = [{
+        //     property: 'TypePath',
+        //     operator: 'contains',
+        //     value: 'PortfolioItem/'
+        // },{
+        //     property: 'TypePath',
+        //     value: 'Defect'
+        // },{
+        //     property: 'TypePath',
+        //     value: 'HierarchicalRequirement'
+        // }];
+        // filters = Rally.data.wsapi.Filter.or(filters);
+
+        // this.add({
+        //         xtype: 'rallycombobox',
+        //         itemId: 'cb-ArtifactType',
+        //         name: 'artifactType',
+        //         storeConfig: {
+        //             model: 'TypeDefinition',
+        //             filters: filters,
+        //             remoteFilter:true
+        //         },
+        //         fieldLabel: 'Artifact Type',
+        //         allowBlank: false,
+        //         labelAlign: 'right',
+        //         labelWidth: 150,
+        //         width: 300,
+        //         valueField: 'TypePath',
+        //         displayField: 'DisplayName'
+        //         // ,
+        //         // listeners: {
+        //         //     scope: this,
+        //         //     change: function(cb){
+        //         //         // this.artifactTypeValue = cb.value;
+        //         //         this.modelNames = this._getModelNames(cb.value);
+        //         //         //this.applyState({});
+        //         //     }
+        //         // }                
+        //     });
+
+        this.add(
+            {
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
