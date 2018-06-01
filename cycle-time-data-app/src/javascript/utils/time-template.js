@@ -29,7 +29,7 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
                 }
 
                 if (values && values.cycleTime && values.endDate){
-                    toolTip = Ext.String.format("{0} days<br/>{1}</br>End: {2}",
+                    toolTip = Ext.String.format("{0} <br/>{1}</br>End: {2}",
                         values.cycleTime,
                         toolTip,
                         Rally.util.DateTime.format(values.endDate,'Y-m-d h:i:s a'));
@@ -45,6 +45,10 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
     defaultRenderer: function(value, meta, record) {
         var data = Ext.apply({}, record.get('cycleTimeData'));
         return this.tpl.apply(data);
+    },
+    summaryRenderer: function(value, meta, record) {
+        //var data = Ext.apply({}, record.get('cycleTimeData'));
+        return 0;
     }
 });
 
