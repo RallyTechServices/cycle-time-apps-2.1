@@ -46,10 +46,6 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
         var data = Ext.apply({}, record.get('cycleTimeData'));
         return this.tpl.apply(data);
     },
-    summaryRenderer: function(value, meta, record) {
-        //var data = Ext.apply({}, record.get('cycleTimeData'));
-        return 0;
-    }
 });
 
 

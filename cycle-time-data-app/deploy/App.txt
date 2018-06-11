@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Fri Jun 01 2018 13:52:36 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon Jun 11 2018 09:10:10 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Jun 01 2018 13:52:36 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Mon Jun 11 2018 09:10:10 GMT-0700 (PDT)";
         var BUILDER = "rajan08";
-        var CHECKSUM = 202168880272;
+        var CHECKSUM = 205953388653;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -564,7 +564,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
 
-    MAX_CHUNK_SIZE: 40,
+    MAX_CHUNK_SIZE: 25,
     USE_POST: false,
 
     constructor: function(config){
@@ -803,6 +803,33 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 scope: this
             }
         });
+
+
+        // var artifact_types = [
+        //         {"name":"User Story",value:"HierarchicalRequirement"},
+        //         {"name":"Feature",value:"PortfolioItem/Feature"}
+        //     ];
+        // this.add({
+        //     xtype: 'rallycombobox',
+        //     itemId: 'cb-ArtifactType',
+        //     fieldLabel: 'Artifact Type',
+        //     labelAlign: 'right',
+        //     labelWidth: 150,
+        //     width: 300,
+        //     store: Ext.create('Rally.data.custom.Store', {data:artifact_types}),
+        //     valueField: 'value',
+        //     displayField: 'name',
+        //     value: this.artifactTypeValue,
+        //     listeners: {
+        //         scope: this,
+        //         change: function(cb){
+        //             //this.artifactTypeValue = cb.value;
+        //             this.modelNames = [cb.value];
+        //             //this._setStateValues(cb.value);
+        //             //this.applyState({});
+        //         }
+        //     }                
+        // });
 
 
         // var filters = [{
@@ -1085,7 +1112,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
     },
     _isCycleTimeField: function(field){
-        var whitelistFields = ['State','ScheduleState'];
+        var whitelistFields = ['State','ScheduleState','FlowState'];
 
         if (field.hidden){
             return false;
@@ -1717,10 +1744,6 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
         var data = Ext.apply({}, record.get('cycleTimeData'));
         return this.tpl.apply(data);
     },
-    summaryRenderer: function(value, meta, record) {
-        //var data = Ext.apply({}, record.get('cycleTimeData'));
-        return 0;
-    }
 });
 
 
@@ -2141,6 +2164,7 @@ Ext.define('CA.technicalservices.Utility',{
 
          this.getGridBox().add({
              xtype: 'rallygrid',
+             itemId: 'main-grid',
              store: store,
              columnCfgs: this.getColumnCfgs(records[0]),
              scroll: 'vertical',
@@ -2191,11 +2215,13 @@ Ext.define('CA.technicalservices.Utility',{
         }
 
         for (var s = 0; s < states.length; s++){
-            totals[states[s]] = 0;
-            count[states[s]] = 0;
-            if(states[s] == this.getToStateValue()){
-                s = states.length;
-            }  
+            if(states[s] != ""){
+                totals[states[s]] = 0;
+                count[states[s]] = 0;
+                if(states[s] == this.getToStateValue()){
+                    s = states.length;
+                }                  
+            }
         }
 
         for (var i = 0; i < updatedRecords.length; i++){
@@ -2226,7 +2252,7 @@ Ext.define('CA.technicalservices.Utility',{
             }
 
             for (var s = 0; s < states.length; s++){
-                if (timeInStateData){
+                if (timeInStateData && states[s] != ""){
 
                     var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
                     if(timeinstate_val !=  NaN && timeinstate_val != 0){
@@ -2344,6 +2370,10 @@ Ext.define('CA.technicalservices.Utility',{
                 stateFieldName = "State.Name";
             }
 
+            if (stateFieldName === 'FlowState'){
+                stateFieldName = "FlowState.Name";
+            }
+            
             Ext.Array.each(states, function(s){
                // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
@@ -2630,7 +2660,7 @@ Ext.define('CA.technicalservices.Utility',{
     },
 
     exportData: function(includeTimestamps, includeSummary){
-        var grid = this.down('rallygrid');
+        var grid = this.down('#main-grid');
         if (!grid){
             this.showErrorNotification("Cannot save export becuase there is no data displapyed to export.");
             return;
