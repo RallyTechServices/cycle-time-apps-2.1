@@ -326,6 +326,7 @@
 
          this.getGridBox().add({
              xtype: 'rallygrid',
+             itemId: 'main-grid',
              store: store,
              columnCfgs: this.getColumnCfgs(records[0]),
              scroll: 'vertical',
@@ -376,11 +377,13 @@
         }
 
         for (var s = 0; s < states.length; s++){
-            totals[states[s]] = 0;
-            count[states[s]] = 0;
-            if(states[s] == this.getToStateValue()){
-                s = states.length;
-            }  
+            if(states[s] != ""){
+                totals[states[s]] = 0;
+                count[states[s]] = 0;
+                if(states[s] == this.getToStateValue()){
+                    s = states.length;
+                }                  
+            }
         }
 
         for (var i = 0; i < updatedRecords.length; i++){
@@ -411,7 +414,7 @@
             }
 
             for (var s = 0; s < states.length; s++){
-                if (timeInStateData){
+                if (timeInStateData && states[s] != ""){
 
                     var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
                     if(timeinstate_val !=  NaN && timeinstate_val != 0){
@@ -529,6 +532,10 @@
                 stateFieldName = "State.Name";
             }
 
+            if (stateFieldName === 'FlowState'){
+                stateFieldName = "FlowState.Name";
+            }
+            
             Ext.Array.each(states, function(s){
                // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
@@ -815,7 +822,7 @@
     },
 
     exportData: function(includeTimestamps, includeSummary){
-        var grid = this.down('rallygrid');
+        var grid = this.down('#main-grid');
         if (!grid){
             this.showErrorNotification("Cannot save export becuase there is no data displapyed to export.");
             return;

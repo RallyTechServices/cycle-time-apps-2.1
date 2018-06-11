@@ -72,6 +72,33 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         });
 
 
+        // var artifact_types = [
+        //         {"name":"User Story",value:"HierarchicalRequirement"},
+        //         {"name":"Feature",value:"PortfolioItem/Feature"}
+        //     ];
+        // this.add({
+        //     xtype: 'rallycombobox',
+        //     itemId: 'cb-ArtifactType',
+        //     fieldLabel: 'Artifact Type',
+        //     labelAlign: 'right',
+        //     labelWidth: 150,
+        //     width: 300,
+        //     store: Ext.create('Rally.data.custom.Store', {data:artifact_types}),
+        //     valueField: 'value',
+        //     displayField: 'name',
+        //     value: this.artifactTypeValue,
+        //     listeners: {
+        //         scope: this,
+        //         change: function(cb){
+        //             //this.artifactTypeValue = cb.value;
+        //             this.modelNames = [cb.value];
+        //             //this._setStateValues(cb.value);
+        //             //this.applyState({});
+        //         }
+        //     }                
+        // });
+
+
         // var filters = [{
         //     property: 'TypePath',
         //     operator: 'contains',
@@ -352,7 +379,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
     },
     _isCycleTimeField: function(field){
-        var whitelistFields = ['State','ScheduleState'];
+        var whitelistFields = ['State','ScheduleState','FlowState'];
 
         if (field.hidden){
             return false;
