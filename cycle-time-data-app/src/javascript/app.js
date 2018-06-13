@@ -11,6 +11,10 @@
     instructions: 'Please click the Filter icon <div class="icon-filter"></div> to define filters for the current data set to calculate historical cycle time data for.<br/>Please click the Cycle Time button <div class="icon-history"></div> to add criteria for calculating cycle time.  <br/>After parameters have been selected, click <div class="icon-refresh"></div><b>Update</b> to load the data.<br/><br/>If a Cycle Time State, Cycle Time State From and To are not defined, Cycle Time data will not be calculated.  <br/>Cycle End Date From and To are optional.  If Cycle End Date From and To are selected, then only artifacts that transitioned into or past the Cycle Time To State during the selected date range will be displayed. <br/><br/>More detailed app information can be found in the <a href="https://github.com/RallyTechServices/cycle-time-apps-2.1/blob/master/cycle-time-data-app/README.md" target="_blank">Github README file here</a> ',
 
     items: [
+        {xtype:'container',itemId:'top_box', layout: 'hbox', items: [
+            {xtype:'container',itemId:'artifact_box'},
+            {xtype:'container',itemId:'granularity_box'}
+        ]},
         {xtype:'container',itemId:'selector_box_parent', layout: 'hbox', items: [
             {xtype:'container',itemId:'selector_box', layout: 'hbox', flex: 1},
             {xtype:'container',itemId:'selector_box_right', layout:'hbox', cls: 'rly-right'}
@@ -41,7 +45,8 @@
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addSelectors()
+       this.addArtifactPicker();
+       //this.addSelectors();
     },
     
     showErrorNotification: function(msg){
@@ -51,8 +56,80 @@
         Rally.ui.notify.Notifier.showError({message: msg});
     },
 
-    addSelectors: function(){
+    addArtifactPicker: function(){
+        this.getArtifactBox().removeAll();
+        this.getGranularityBox().removeAll();
 
+        var filters = [{
+            property: 'TypePath',
+            operator: 'contains',
+            value: 'PortfolioItem/'
+        },{
+            property: 'TypePath',
+            value: 'Defect'
+        },{
+            property: 'TypePath',
+            value: 'HierarchicalRequirement'
+        }];
+        filters = Rally.data.wsapi.Filter.or(filters);
+
+        this.getArtifactBox().add({
+                xtype: 'rallycombobox',
+                itemId: 'cb-ArtifactType',
+                name: 'artifactType',
+                storeConfig: {
+                    model: 'TypeDefinition',
+                    filters: filters,
+                    remoteFilter: true,
+                    autoLoad: true
+                },
+                fieldLabel: 'Artifact Type',
+                allowBlank: false,
+                labelAlign: 'right',
+                labelWidth: 150,
+                width: 300,
+                valueField: 'TypePath',
+                displayField: 'DisplayName',
+                listeners: {
+                    scope: this,
+                    change: function(cb){
+                        this.addSelectors();
+                    }
+                }              
+            });        
+
+        this.getGranularityBox().add({
+            xtype: 'radiogroup',
+            itemId: 'granularity',
+            fieldLabel: 'Granularity',
+            labelAlign: 'right',
+            // columns: 3,
+            // vertical: true,
+            layout: 'hbox',
+            labelWidth: 100,
+            width:500,
+            items: [{
+                boxLabel: "Week",
+                name: 'granularity',
+                inputValue: "week"
+            },{
+                boxLabel: "Day",
+                name: 'granularity',
+                inputValue: "day",
+                checked: true
+            }, {
+                boxLabel: "Hour",
+                name: 'granularity',
+                inputValue: "hour"
+            }, {
+                boxLabel: "Minute",
+                name: 'granularity',
+                inputValue: "minute"
+            } ]
+        });
+    },
+
+    addSelectors: function(){
         this.getSelectorBox().removeAll();
         this.getCycleTimeBox().removeAll();
         this.getFilterBox().removeAll();
@@ -278,7 +355,7 @@
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
-         CArABU.technicalservices.CycleTimeCalculator.granularity = this.getSetting('granularity');
+         CArABU.technicalservices.CycleTimeCalculator.granularity = this.down('#granularity') && this.down('#granularity').getValue()  && this.down('#granularity').getValue().granularity;
 
          this.getGridBox().removeAll();
          this.down('#total_box').removeAll();
@@ -471,7 +548,7 @@
                 data: [totals,avg]
             }),
             border:1,
-            title: 'Summary in ' + me.getSetting('granularity')+'(s)',
+            title: 'Summary in ' + CArABU.technicalservices.CycleTimeCalculator.granularity +'(s)',
             titleAlign: 'center',
             columnCfgs: columns
         });       
@@ -990,7 +1067,8 @@
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('artifactType'); //includeTypes');
+        //var modelNames = this.getSetting('artifactType'); //includeTypes');
+        var modelNames = this.down('#cb-ArtifactType').getValue();
 
         //if (Ext.isString(modelNames)){
         //    modelNames = modelNames.split(',');
@@ -999,6 +1077,12 @@
         this.logger.log('getModelNames', modelNames);
         return [modelNames] || [];
     },
+    getArtifactBox: function(){
+        return this.down('#artifact_box');
+    }, 
+    getGranularityBox: function(){
+        return this.down('#granularity_box');
+    }, 
     getSelectorBox: function(){
         return this.down('#selector_box');
     },
