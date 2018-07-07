@@ -45,8 +45,57 @@
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addArtifactPicker();
-       //this.addSelectors();
+       var me = this;
+
+        var config = {
+            model:  'FlowState',
+            fetch: ['Name','ObjectID'],
+            limit: Infinity
+        };
+
+        me.setLoading(true);
+
+        Ext.Ajax.request({
+            url: '/slm/webservice/v2.0/FlowState?fetch=Name,ObjectID&limit=Infinity&pagesize=2000',
+            //url: '/slm/sbt/tag.sp?oid=' + tagOid,
+            method: 'GET',
+            success: function(response){
+                console.log('FlowStates',JSON.parse(response.responseText));
+                var response = JSON.parse(response.responseText);
+                var results = response && response.QueryResult && response.QueryResult.Results || [];
+                console.log(results);
+                me.flow_states = {}
+                _.each(results, function(fs){
+                    me.flow_states[fs.ObjectID] = fs.Name;
+                });
+                console.log(me.flow_states);
+                CArABU.technicalservices.CycleTimeCalculator.flowStates = me.flow_states;
+
+                me.setLoading(false);
+                me.addArtifactPicker();
+            },
+            failure: function(response){
+                me.setLoading(false);
+            }
+        });
+
+
+        // me.loadWsapiRecords(config).then({
+        //     success: function(records){
+        //         me.flow_state = {};
+        //         _.each(records,function(fs){
+        //             me.flow_state[fs.get('ObjectID')] = fs.get('Name');
+        //         })
+        //         console.log('Flow States',me.flow_state);
+        //         me.setLoading(false);
+        //         me.addArtifactPicker();
+        //     },
+        //     failure: function(msg) {
+        //         me.setLoading(false);
+        //         deferred.reject(msg);
+        //     },
+        //     scope: me
+        // });
     },
     
     showErrorNotification: function(msg){
@@ -125,7 +174,13 @@
                 boxLabel: "Minute",
                 name: 'granularity',
                 inputValue: "minute"
-            } ]
+            } ],
+            listeners:{
+                change: function(){
+                    this.setUpdateButtonUpdateable(true);
+                },
+                scope:this
+            }
         });
     },
 
@@ -351,7 +406,6 @@
          this.getMessageBox().update({message: msg});
      },
      updateGrid: function(){
-
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
@@ -513,6 +567,7 @@
         })
 
         avg["Name"] = "Averages";
+        count["Name"] = "Counts"
         console.log('totals/counts',totals,count,avg);
         var columns = [];
 
@@ -545,7 +600,7 @@
             showRowActionsColumn: false,
             editable: false,
             store: Ext.create('Rally.data.custom.Store', {
-                data: [totals,avg]
+                data: [totals,avg,count]
             }),
             border:1,
             title: 'Summary in ' + CArABU.technicalservices.CycleTimeCalculator.granularity +'(s)',
@@ -731,6 +786,8 @@
 
         return deferred;
     },
+
+
 
     getExportLimit: function(){
         return this.getSetting('exportLimit') || 1000;
@@ -1032,6 +1089,31 @@
         }
         return csv.join("\r\n");
     },
+
+    loadWsapiRecords: function(config,returnOperation){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+                
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    if ( returnOperation ) {
+                        deferred.resolve(operation);
+                    } else {
+                        deferred.resolve(records);
+                    }
+                } else {
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){

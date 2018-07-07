@@ -7,7 +7,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 
     stateful: true,
     stateId: 'cycleTimePanel',
-    stateEvents: ['expand', 'collapse', 'parametersupdated'],
+    stateEvents: ['click','expand', 'collapse', 'parametersupdated'],
     text: '',
 
     config: {
@@ -28,7 +28,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 
         this.on('click', this._togglePanel, this, { buffer: 200 });
         this.on('parametersupdated', this._onPanelChange, this, { buffer: 500 });
-        this.on('collapse', this._onCollapse, this);
+        //this.on('collapse', this._onCollapse, this);
     },
     _hasState: function(){
         if (this.stateful && this.stateId) {

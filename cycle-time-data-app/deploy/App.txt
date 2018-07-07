@@ -3,12 +3,12 @@
 <head>
     <title>Cycle Time Data</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Jun 12 2018 20:31:39 GMT-0700 (PDT) -->
+    <!--  Build Date: Fri Jul 06 2018 17:09:16 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Jun 12 2018 20:31:39 GMT-0700 (PDT)";
+        var APP_BUILD_DATE = "Fri Jul 06 2018 17:09:16 GMT-0700 (PDT)";
         var BUILDER = "rajan08";
-        var CHECKSUM = 208163837444;
+        var CHECKSUM = 221091551608;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -210,16 +210,23 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     granularity: 'day',
     creationDateText: "(Creation)",
     noStateText: "(No State)",
+    flowStates : {},
 
     getTimeInStateData: function(snapshots, field, value, dateField){
+
         snapshots = _.sortBy(snapshots, dateField);
 
         if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
                 value = "";
         }
 
-        var inState = snapshots[0][field] === value,
-            startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+        var inState = snapshots[0][field] === value;
+            if(field == "FlowState"){
+                inState = this.flowStates[snapshots[0][field]] === value;
+            }
+
+        var startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+
 
         var info = [],
             idx = 0;
@@ -229,15 +236,19 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         }
         Ext.Array.each(snapshots, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-            if (inState && snap[field] !== value){
+            var snap_field = snap[field];
+            if(field == "FlowState"){
+                snap_field = this.flowStates[snap_field] || "";
+            }
+            if (inState && snap_field !== value){
                 info[idx].push(thisDate);
                 idx++;
                 inState = false;
-            } else if (!inState && snap[field] === value){
+            } else if (!inState && snap_field === value){
                 info[idx] = [thisDate];
                 inState = true;
             }
-        });
+        }, this);
         //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
@@ -268,9 +279,13 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         Ext.each(snaps, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-            if (snap[field]){
+            var snap_field = snap[field];
+            if(field == "FlowState"){
+                snap_field = this.flowStates[snap_field] || "";
+            }            
+            if (snap_field){
                 previousStateIdx = stateIdx;
-                stateIdx = _.indexOf(precedence, snap[field]);
+                stateIdx = _.indexOf(precedence, snap_field);
             } else {
                 if (previousStateIdx > 0){
                     stateIdx = -1;
@@ -403,7 +418,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 
     stateful: true,
     stateId: 'cycleTimePanel',
-    stateEvents: ['expand', 'collapse', 'parametersupdated'],
+    stateEvents: ['click','expand', 'collapse', 'parametersupdated'],
     text: '',
 
     config: {
@@ -424,7 +439,7 @@ Ext.define('CA.technicalservices.CycleTimePickerButton', {
 
         this.on('click', this._togglePanel, this, { buffer: 200 });
         this.on('parametersupdated', this._onPanelChange, this, { buffer: 500 });
-        this.on('collapse', this._onCollapse, this);
+        //this.on('collapse', this._onCollapse, this);
     },
     _hasState: function(){
         if (this.stateful && this.stateId) {
@@ -627,8 +642,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
 
             var cycleTimeData = this._mungeCycleTimeData(snapshots);
             var timeInStateData = this._mungeTimeInStateData(snapshots);
-
-            if (this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
+            console.log(cycleTimeData, timeInStateData);
+            if (cycleTimeData && this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
                 r.set("cycleTimeData",cycleTimeData);
                 r.set("timeInStateData", timeInStateData);
                 updatedRecords.push(r);
@@ -638,7 +653,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return updatedRecords;
     },
     _isCycleInDateRange: function(cycleTimeData, startDate, endDate){
-    //    console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
+       console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
         if (startDate && cycleTimeData.endDate < startDate){
             return false;
         }
@@ -706,7 +721,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     deferred.resolve(records);
                 } else {
                     var msg = "Failure loading snapshots for objectIDs: " + objectIDs.join(', ') + ":  " + operation.error.errors.join(',');
-                    deferred.resolve(msg);
+                    console.log(msg);
+                    deferred.resolve([]);
                 }
             }
         });
@@ -1815,8 +1831,57 @@ Ext.define('CA.technicalservices.Utility',{
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addArtifactPicker();
-       //this.addSelectors();
+       var me = this;
+
+        var config = {
+            model:  'FlowState',
+            fetch: ['Name','ObjectID'],
+            limit: Infinity
+        };
+
+        me.setLoading(true);
+
+        Ext.Ajax.request({
+            url: '/slm/webservice/v2.0/FlowState?fetch=Name,ObjectID&limit=Infinity&pagesize=2000',
+            //url: '/slm/sbt/tag.sp?oid=' + tagOid,
+            method: 'GET',
+            success: function(response){
+                console.log('FlowStates',JSON.parse(response.responseText));
+                var response = JSON.parse(response.responseText);
+                var results = response && response.QueryResult && response.QueryResult.Results || [];
+                console.log(results);
+                me.flow_states = {}
+                _.each(results, function(fs){
+                    me.flow_states[fs.ObjectID] = fs.Name;
+                });
+                console.log(me.flow_states);
+                CArABU.technicalservices.CycleTimeCalculator.flowStates = me.flow_states;
+
+                me.setLoading(false);
+                me.addArtifactPicker();
+            },
+            failure: function(response){
+                me.setLoading(false);
+            }
+        });
+
+
+        // me.loadWsapiRecords(config).then({
+        //     success: function(records){
+        //         me.flow_state = {};
+        //         _.each(records,function(fs){
+        //             me.flow_state[fs.get('ObjectID')] = fs.get('Name');
+        //         })
+        //         console.log('Flow States',me.flow_state);
+        //         me.setLoading(false);
+        //         me.addArtifactPicker();
+        //     },
+        //     failure: function(msg) {
+        //         me.setLoading(false);
+        //         deferred.reject(msg);
+        //     },
+        //     scope: me
+        // });
     },
     
     showErrorNotification: function(msg){
@@ -1895,7 +1960,13 @@ Ext.define('CA.technicalservices.Utility',{
                 boxLabel: "Minute",
                 name: 'granularity',
                 inputValue: "minute"
-            } ]
+            } ],
+            listeners:{
+                change: function(){
+                    this.setUpdateButtonUpdateable(true);
+                },
+                scope:this
+            }
         });
     },
 
@@ -2121,7 +2192,6 @@ Ext.define('CA.technicalservices.Utility',{
          this.getMessageBox().update({message: msg});
      },
      updateGrid: function(){
-
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
@@ -2283,6 +2353,7 @@ Ext.define('CA.technicalservices.Utility',{
         })
 
         avg["Name"] = "Averages";
+        count["Name"] = "Counts"
         console.log('totals/counts',totals,count,avg);
         var columns = [];
 
@@ -2315,7 +2386,7 @@ Ext.define('CA.technicalservices.Utility',{
             showRowActionsColumn: false,
             editable: false,
             store: Ext.create('Rally.data.custom.Store', {
-                data: [totals,avg]
+                data: [totals,avg,count]
             }),
             border:1,
             title: 'Summary in ' + CArABU.technicalservices.CycleTimeCalculator.granularity +'(s)',
@@ -2501,6 +2572,8 @@ Ext.define('CA.technicalservices.Utility',{
 
         return deferred;
     },
+
+
 
     getExportLimit: function(){
         return this.getSetting('exportLimit') || 1000;
@@ -2802,6 +2875,31 @@ Ext.define('CA.technicalservices.Utility',{
         }
         return csv.join("\r\n");
     },
+
+    loadWsapiRecords: function(config,returnOperation){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+                
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    if ( returnOperation ) {
+                        deferred.resolve(operation);
+                    } else {
+                        deferred.resolve(records);
+                    }
+                } else {
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){

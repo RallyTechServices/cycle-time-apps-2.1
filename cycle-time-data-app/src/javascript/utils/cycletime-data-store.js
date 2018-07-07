@@ -64,8 +64,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
 
             var cycleTimeData = this._mungeCycleTimeData(snapshots);
             var timeInStateData = this._mungeTimeInStateData(snapshots);
-
-            if (this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
+            console.log(cycleTimeData, timeInStateData);
+            if (cycleTimeData && this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
                 r.set("cycleTimeData",cycleTimeData);
                 r.set("timeInStateData", timeInStateData);
                 updatedRecords.push(r);
@@ -75,7 +75,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return updatedRecords;
     },
     _isCycleInDateRange: function(cycleTimeData, startDate, endDate){
-    //    console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
+       console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
         if (startDate && cycleTimeData.endDate < startDate){
             return false;
         }
@@ -143,7 +143,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     deferred.resolve(records);
                 } else {
                     var msg = "Failure loading snapshots for objectIDs: " + objectIDs.join(', ') + ":  " + operation.error.errors.join(',');
-                    deferred.resolve(msg);
+                    console.log(msg);
+                    deferred.resolve([]);
                 }
             }
         });
