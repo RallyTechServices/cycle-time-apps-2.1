@@ -46,56 +46,70 @@
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
        var me = this;
-
-        var config = {
-            model:  'FlowState',
-            fetch: ['Name','ObjectID'],
-            limit: Infinity
-        };
+       var pagesize = 2000;
 
         me.setLoading(true);
 
-        Ext.Ajax.request({
-            url: '/slm/webservice/v2.0/FlowState?fetch=Name,ObjectID&limit=Infinity&pagesize=2000',
-            //url: '/slm/sbt/tag.sp?oid=' + tagOid,
-            method: 'GET',
-            success: function(response){
-                console.log('FlowStates',JSON.parse(response.responseText));
-                var response = JSON.parse(response.responseText);
-                var results = response && response.QueryResult && response.QueryResult.Results || [];
-                console.log(results);
-                me.flow_states = {}
-                _.each(results, function(fs){
-                    me.flow_states[fs.ObjectID] = fs.Name;
-                });
-                console.log(me.flow_states);
-                CArABU.technicalservices.CycleTimeCalculator.flowStates = me.flow_states;
+        me._getFlowStates(1,20,true).then({
+            success: function(count){
+                console.log('Total Count:',count);
+                var promises = [];
+                for (i = 0; i < Math.ceil(count/pagesize); i++) {
+                    promises.push(me._getFlowStates((i*pagesize)+1,pagesize,false));
+                }
+               Deft.Promise.all(promises).then({
+                   success: function(results){
+                        var all_results = _.flatten(results);
+                        console.log(all_results);
+                        me.flow_states = {}
+                        _.each(all_results, function(fs){
+                            me.flow_states[fs.ObjectID] = fs.Name;
+                        });
+                        console.log(me.flow_states);
+                        CArABU.technicalservices.CycleTimeCalculator.flowStates = me.flow_states;
 
-                me.setLoading(false);
-                me.addArtifactPicker();
+                        me.setLoading(false);
+                        me.addArtifactPicker();                       
+                   },
+                   failure: function(msg){
+                       me.showErrorNotification(msg);
+                       me.setLoading(false);
+                       deferred.reject(msg);
+                   },
+                   scope:me
+                });             
             },
-            failure: function(response){
-                me.setLoading(false);
-            }
+            scope:me
         });
+    },
 
+    // Using Ajax as I am not able to create a WSAPI store for FlowState. get this error - Could not find registered factory for type:  FlowState.
+    _getFlowStates:function(startIndex, pageSize, getCountOnly){
+        var deferred = Ext.create('Deft.Deferred');
+            var url = '/slm/webservice/v2.0/FlowState?fetch=Name,ObjectID&start='+startIndex+'&pagesize='+pageSize;
+            console.log(url);
+            Ext.Ajax.request({
+                    url: url,
+                    method: 'GET',
+                    success: function(response){
+                        var response = JSON.parse(response.responseText);
+                        var results = [],
+                            count = 0;
+                        if(getCountOnly){
+                            count = response && response.QueryResult && response.QueryResult.TotalResultCount || 0;
+                            deferred.resolve(count);
+                        }else{
+                            results = response && response.QueryResult && response.QueryResult.Results || [];
+                            deferred.resolve(results);
+                        }
+                    },
+                    failure: function(response){
+                        console.log(response);
+                        me.setLoading(false);
+                    }
+                });
 
-        // me.loadWsapiRecords(config).then({
-        //     success: function(records){
-        //         me.flow_state = {};
-        //         _.each(records,function(fs){
-        //             me.flow_state[fs.get('ObjectID')] = fs.get('Name');
-        //         })
-        //         console.log('Flow States',me.flow_state);
-        //         me.setLoading(false);
-        //         me.addArtifactPicker();
-        //     },
-        //     failure: function(msg) {
-        //         me.setLoading(false);
-        //         deferred.reject(msg);
-        //     },
-        //     scope: me
-        // });
+        return deferred.promise;  
     },
     
     showErrorNotification: function(msg){
@@ -126,6 +140,8 @@
                 xtype: 'rallycombobox',
                 itemId: 'cb-ArtifactType',
                 name: 'artifactType',
+                stateful: true,
+                stateId: 'artifact_type',
                 storeConfig: {
                     model: 'TypeDefinition',
                     filters: filters,
@@ -152,6 +168,8 @@
             itemId: 'granularity',
             fieldLabel: 'Granularity',
             labelAlign: 'right',
+            stateful: true,
+            stateId: 'granularity_picker',               
             // columns: 3,
             // vertical: true,
             layout: 'hbox',
@@ -499,12 +517,12 @@
         count["CycleTime"] = 0;
 
         if (includeBlocked){
-            totals["Blocked"] = 0;
-            count["Blocked"] = 0;
+            totals["In Blocked"] = 0;
+            count["In Blocked"] = 0;
         }
         if (includeReady){
-            totals["Ready"] = 0;
-            count["Ready"] = 0;
+            totals["In Ready"] = 0;
+            count["In Ready"] = 0;
         }
 
         for (var s = 0; s < states.length; s++){
@@ -532,15 +550,15 @@
             if (includeBlocked){
                 var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
                 if(blocked_val != NaN && Number(blocked_val) != 0){
-                    totals["Blocked"] += blocked_val;
-                    count["Blocked"]++;                    
+                    totals["In Blocked"] += blocked_val;
+                    count["In Blocked"]++;                    
                 }
             }
             if (includeReady){
                 var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
                 if(ready_val !=  NaN && ready_val != 0){
-                    totals["Ready"] += ready_val;
-                    count["Ready"]++;                    
+                    totals["In Ready"] += ready_val;
+                    count["In Ready"]++;                    
                 }                
             }
 
