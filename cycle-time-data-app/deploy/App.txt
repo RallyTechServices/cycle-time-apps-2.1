@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cycle Time Data</title>
-    <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Fri Jul 13 2018 11:11:59 GMT-0700 (PDT) -->
-    
+    <title>cycle-time-data-app-0.4.0-1</title>
+    <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
+    <!--  Build Date: Wed Sep 12 2018 21:05:27 GMT+0000 (UTC) -->
+
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Jul 13 2018 11:11:59 GMT-0700 (PDT)";
-        var BUILDER = "rajan08";
-        var CHECKSUM = 224582965881;
+        var APP_BUILD_DATE = "Wed Sep 12 2018 21:05:27 GMT+0000 (UTC)";
+        var CHECKSUM = 225795051644;
     </script>
-    
-    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
+
+    <script type="text/javascript" src="https://us1.rallydev.com/apps/2.1/sdk-debug.js"></script>
+    <!-- our highcharts (needed so that we can add patterns)
+    <script type="text/javascript" src="/apps/2.1/lib/analytics/analytics-all.js"></script>
+    -->
+
 
     <script type="text/javascript">
         Rally.onReady(function() {
@@ -3002,15 +3005,15 @@ Ext.define('CA.technicalservices.Utility',{
     }
 });
 
-            
-               Rally.launchApp('cycle-time-data-app', {
-                   name: 'Cycle Time Data'
-               });
+
+            Rally.launchApp('cycle-time-data-app', {
+                name: 'cycle-time-data-app'
+            });
         });
     </script>
-    
-    <style type="text/css">
 
+    <style type="text/css">
+        
 .app {
 }
 .tsinfolink {
@@ -3046,5 +3049,7 @@ Ext.define('CA.technicalservices.Utility',{
     </style>
 
 </head>
+
 <body></body>
+
 </html>

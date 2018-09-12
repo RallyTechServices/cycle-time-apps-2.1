@@ -1,17 +1,32 @@
 {
-  "_comment": "This file is used by grunt",
-  "name": "tsabc",
-  "version": "0.3.0",
+  "name": "cycle-time-data-app",
+  "version": "0.4.0-1",
+  "scripts": {
+    "debug": "grunt debug",
+    "debug:watch": "nodemon --exec grunt debug",
+    "deploy:watch": "nodemon --exec grunt deploy",
+    "deploy-pretty:watch": "nodemon --exec grunt deploy-pretty",
+    "deploy-debugsdk:watch": "nodemon --exec grunt deploy-debugsdk"
+  },
   "dependencies": {},
   "devDependencies": {
     "grunt": "~0.4.5",
     "grunt-cli": "0.1.6",
-    "grunt-contrib-jasmine": "~0.5.2",
+    "grunt-contrib-jasmine": "1.1.0",
     "grunt-templater": "git://github.com/rockwood/grunt-templater.git",
-    "underscore": "1.4.4",
+    "underscore": "1.8.3",
+    "grunt-prompt": "^1.3.3",
     "grunt-contrib-uglify": "0.3.2",
     "request": "2.67",
     "grunt-contrib-watch": "1.0.0",
-    "username": "2.1.0"
+    "username": "2.1.0",
+    "rally-sdk2-test-utils": "0.1.2",
+    "nodemon": "^1.14.11"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src/*", "templates/*"
+    ],
+    "verbose": true
   }
 }
