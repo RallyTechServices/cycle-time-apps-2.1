@@ -11,14 +11,19 @@
     instructions: 'Please click the Filter icon <div class="icon-filter"></div> to define filters for the current data set to calculate historical cycle time data for.<br/>Please click the Cycle Time button <div class="icon-history"></div> to add criteria for calculating cycle time.  <br/>After parameters have been selected, click <div class="icon-refresh"></div><b>Update</b> to load the data.<br/><br/>If a Cycle Time State, Cycle Time State From and To are not defined, Cycle Time data will not be calculated.  <br/>Cycle End Date From and To are optional.  If Cycle End Date From and To are selected, then only artifacts that transitioned into or past the Cycle Time To State during the selected date range will be displayed. <br/><br/>More detailed app information can be found in the <a href="https://github.com/RallyTechServices/cycle-time-apps-2.1/blob/master/cycle-time-data-app/README.md" target="_blank">Github README file here</a> ',
 
     items: [
+        {xtype:'container',itemId:'top_box', layout: 'hbox', items: [
+            {xtype:'container',itemId:'artifact_box'},
+            {xtype:'container',itemId:'granularity_box'}
+        ]},
         {xtype:'container',itemId:'selector_box_parent', layout: 'hbox', items: [
             {xtype:'container',itemId:'selector_box', layout: 'hbox', flex: 1},
             {xtype:'container',itemId:'selector_box_right', layout:'hbox', cls: 'rly-right'}
         ]},
-        {xtype:'container',itemId:'filter_box', flex: 1},
-        {xtype:'container',itemId:'cycletime_box', flex: 1},
+        {xtype: 'container', itemId: 'filter_box', flex: 1},
+        {xtype: 'container', itemId: 'cycletime_box', flex: 1},
         {xtype: 'container', itemId: 'message_box', flex: 1, height: 45, tpl: '<tpl><div class="no-data-container"><div class="secondary-message">{message}</div></div></tpl>'},
-        {xtype:'container',itemId:'grid_box'}
+        {xtype: 'container', itemId: 'total_box'},
+        {xtype: 'container', itemId: 'grid_box'}        
     ],
 
     integrationHeaders : {
@@ -40,16 +45,164 @@
 
     launch: function() {
        this.logger.log('Launch Settings', this.getSettings());
-       this.addSelectors()
+       var me = this;
+       var pagesize = 2000;
+
+        me.setLoading(true);
+
+        me._getFlowStates(1,20,true).then({
+            success: function(count){
+                console.log('Total Count:',count);
+                var promises = [];
+                for (i = 0; i < Math.ceil(count/pagesize); i++) {
+                    promises.push(me._getFlowStates((i*pagesize)+1,pagesize,false));
+                }
+               Deft.Promise.all(promises).then({
+                   success: function(results){
+                        var all_results = _.flatten(results);
+                        console.log(all_results);
+                        me.flow_states = {}
+                        _.each(all_results, function(fs){
+                            me.flow_states[fs.ObjectID] = fs.Name;
+                        });
+                        console.log(me.flow_states);
+                        CArABU.technicalservices.CycleTimeCalculator.flowStates = me.flow_states;
+
+                        me.setLoading(false);
+                        me.addArtifactPicker();                       
+                   },
+                   failure: function(msg){
+                       me.showErrorNotification(msg);
+                       me.setLoading(false);
+                       deferred.reject(msg);
+                   },
+                   scope:me
+                });             
+            },
+            scope:me
+        });
     },
+
+    // Using Ajax as I am not able to create a WSAPI store for FlowState. get this error - Could not find registered factory for type:  FlowState.
+    _getFlowStates:function(startIndex, pageSize, getCountOnly){
+        var deferred = Ext.create('Deft.Deferred');
+            var url = '/slm/webservice/v2.0/FlowState?fetch=Name,ObjectID&start='+startIndex+'&pagesize='+pageSize;
+            console.log(url);
+            Ext.Ajax.request({
+                    url: url,
+                    method: 'GET',
+                    success: function(response){
+                        var response = JSON.parse(response.responseText);
+                        var results = [],
+                            count = 0;
+                        if(getCountOnly){
+                            count = response && response.QueryResult && response.QueryResult.TotalResultCount || 0;
+                            deferred.resolve(count);
+                        }else{
+                            results = response && response.QueryResult && response.QueryResult.Results || [];
+                            deferred.resolve(results);
+                        }
+                    },
+                    failure: function(response){
+                        console.log(response);
+                        me.setLoading(false);
+                    }
+                });
+
+        return deferred.promise;  
+    },
+    
     showErrorNotification: function(msg){
         if (!msg){
             msg = "Error during execution.  See logs for details."
         }
         Rally.ui.notify.Notifier.showError({message: msg});
     },
-    addSelectors: function(){
 
+    addArtifactPicker: function(){
+        this.getArtifactBox().removeAll();
+        this.getGranularityBox().removeAll();
+
+        var filters = [{
+            property: 'TypePath',
+            operator: 'contains',
+            value: 'PortfolioItem/'
+        },{
+            property: 'TypePath',
+            value: 'Defect'
+        },{
+            property: 'TypePath',
+            value: 'HierarchicalRequirement'
+        }];
+        filters = Rally.data.wsapi.Filter.or(filters);
+
+        this.getArtifactBox().add({
+                xtype: 'rallycombobox',
+                itemId: 'cb-ArtifactType',
+                name: 'artifactType',
+                stateful: true,
+                stateId: 'artifact_type',
+                storeConfig: {
+                    model: 'TypeDefinition',
+                    filters: filters,
+                    remoteFilter: true,
+                    autoLoad: true
+                },
+                fieldLabel: 'Artifact Type',
+                allowBlank: false,
+                labelAlign: 'right',
+                labelWidth: 150,
+                width: 300,
+                valueField: 'TypePath',
+                displayField: 'DisplayName',
+                listeners: {
+                    scope: this,
+                    change: function(cb){
+                        this.addSelectors();
+                    }
+                }              
+            });        
+
+        this.getGranularityBox().add({
+            xtype: 'radiogroup',
+            itemId: 'granularity',
+            fieldLabel: 'Granularity',
+            labelAlign: 'right',
+            stateful: true,
+            stateId: 'granularity_picker',               
+            // columns: 3,
+            // vertical: true,
+            layout: 'hbox',
+            labelWidth: 100,
+            width:500,
+            items: [{
+                boxLabel: "Week",
+                name: 'granularity',
+                inputValue: "week"
+            },{
+                boxLabel: "Day",
+                name: 'granularity',
+                inputValue: "day",
+                checked: true
+            }, {
+                boxLabel: "Hour",
+                name: 'granularity',
+                inputValue: "hour"
+            }, {
+                boxLabel: "Minute",
+                name: 'granularity',
+                inputValue: "minute"
+            } ],
+            listeners:{
+                change: function(){
+                    this.setUpdateButtonUpdateable(true);
+                },
+                scope:this
+            }
+        });
+    },
+
+    addSelectors: function(){
         this.getSelectorBox().removeAll();
         this.getCycleTimeBox().removeAll();
         this.getFilterBox().removeAll();
@@ -271,13 +424,14 @@
          this.getMessageBox().update({message: msg});
      },
      updateGrid: function(){
-
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
          CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
-         CArABU.technicalservices.CycleTimeCalculator.granularity = this.getSetting('granularity');
+         CArABU.technicalservices.CycleTimeCalculator.granularity = this.down('#granularity') && this.down('#granularity').getValue()  && this.down('#granularity').getValue().granularity;
 
          this.getGridBox().removeAll();
+         this.down('#total_box').removeAll();
+
          this.updateMessageBox();
          this.setUpdateButtonUpdateable(false);
          this.setLoading('Loading Current Data...');
@@ -311,6 +465,8 @@
          var fields = records.length > 0 && records[0].getFields() || undefined;
 
          this.suspendLayouts();
+         this.addTotals(records);
+
          var store = Ext.create('Rally.data.custom.Store',{
              data: records,
              fields: fields,
@@ -319,14 +475,159 @@
 
          this.getGridBox().add({
              xtype: 'rallygrid',
+             itemId: 'main-grid',
              store: store,
              columnCfgs: this.getColumnCfgs(records[0]),
-             showPagingToolbar: true,
              scroll: 'vertical',
-             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>'
+             emptyText:  '<div class="no-data-container"><div class="secondary-message">No data was found for the selected current filters, cycle time parameters and project scope.</div></div>',
+             listeners:{
+                load: function(records, operation){
+                    console.log('Grid load',records);
+                }
+             },
          });
          this.resumeLayouts(true);
      },
+
+     /*
+        Create a table
+        [
+            {"Name":"Sum", "CycleTimeData":"123.0", "Backlog":"100","In-progress":"200"},
+            {"Name":"Average",  "CycleTimeData":"12.3", "Backlog":"60","In-progress":"30"}
+        ]
+
+     */
+
+    addTotals:function(updatedRecords) {
+        console.log('Add Totals',updatedRecords);
+        var me = this;
+        var headers = [];
+        var totals = {"Name":"Totals"};
+        var count = {};
+        var records = [];
+
+        var states = this.getCycleStates(),
+            stateField = this.getStateField(),
+            includeBlocked = this.getIncludeBlocked(),
+            includeReady = this.getIncludeReady(),
+            previousStates = this.getPreviousStates(),
+            endStates = this.getEndStates();
+
+        totals["CycleTime"] = 0;
+        count["CycleTime"] = 0;
+
+        if (includeBlocked){
+            totals["In Blocked"] = 0;
+            count["In Blocked"] = 0;
+        }
+        if (includeReady){
+            totals["In Ready"] = 0;
+            count["In Ready"] = 0;
+        }
+
+        for (var s = 0; s < states.length; s++){
+            if(states[s] != ""){
+                totals[states[s]] = 0;
+                count[states[s]] = 0;
+                if(states[s] == this.getToStateValue()){
+                    s = states.length;
+                }                  
+            }
+        }
+
+        for (var i = 0; i < updatedRecords.length; i++){
+            var    record = updatedRecords[i];
+
+            //CycleTime
+            var timeInStateData = record.get('timeInStateData');
+
+            if(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime && Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime) != 0){
+                totals["CycleTime"] +=  Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime);
+                count["CycleTime"]++                
+            }
+
+
+            if (includeBlocked){
+                var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
+                if(blocked_val != NaN && Number(blocked_val) != 0){
+                    totals["In Blocked"] += blocked_val;
+                    count["In Blocked"]++;                    
+                }
+            }
+            if (includeReady){
+                var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
+                if(ready_val !=  NaN && ready_val != 0){
+                    totals["In Ready"] += ready_val;
+                    count["In Ready"]++;                    
+                }                
+            }
+
+            for (var s = 0; s < states.length; s++){
+                if (timeInStateData && states[s] != ""){
+
+                    var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                    if(timeinstate_val !=  NaN && timeinstate_val != 0){
+                        totals[states[s]] += timeinstate_val;
+                        count[states[s]]++;                    
+                    }
+                    if(states[s] == this.getToStateValue()){
+                        s = states.length;
+                    }
+
+                } 
+            }
+
+        }
+        
+        var avg = {};
+        _.each(totals, function(val,key){
+            avg[key] = count[key] > 0 ? totals[key] / count[key] : 0; 
+        })
+
+        avg["Name"] = "Averages";
+        count["Name"] = "Counts"
+        console.log('totals/counts',totals,count,avg);
+        var columns = [];
+
+        _.each(Ext.Object.getKeys(totals),function(key){
+            if(key == "Name"){
+                columns.push({
+                    text: "",
+                    dataIndex: key,
+                    flex: 1         
+                });
+            }else{
+                columns.push({
+                    text: key,
+                    dataIndex: key,
+                    flex: 1,
+                    renderer: function(value){
+                        return Ext.util.Format.round(value,2);
+                    }                
+                });                
+            }
+
+        });
+
+        me.down('#total_box').removeAll();
+        
+        me.down('#total_box').add({
+            xtype: 'rallygrid'
+            ,
+            showPagingToolbar: false,
+            showRowActionsColumn: false,
+            editable: false,
+            store: Ext.create('Rally.data.custom.Store', {
+                data: [totals,avg,count]
+            }),
+            border:1,
+            title: 'Summary in ' + CArABU.technicalservices.CycleTimeCalculator.granularity +'(s)',
+            titleAlign: 'center',
+            columnCfgs: columns
+        });       
+
+    },
+
      fetchWsapiArtifactData: function(){
          var deferred = Ext.create('Deft.Deferred');
          Ext.create('Rally.data.wsapi.artifact.Store',{
@@ -381,6 +682,10 @@
                 stateFieldName = "State.Name";
             }
 
+            if (stateFieldName === 'FlowState'){
+                stateFieldName = "FlowState.Name";
+            }
+            
             Ext.Array.each(states, function(s){
                // console.log('s',stateFieldName, s);
                 if (s === toStateValue || cycleFilters.length > 0){
@@ -499,6 +804,8 @@
 
         return deferred;
     },
+
+
 
     getExportLimit: function(){
         return this.getSetting('exportLimit') || 1000;
@@ -667,7 +974,7 @@
     },
 
     exportData: function(includeTimestamps, includeSummary){
-        var grid = this.down('rallygrid');
+        var grid = this.down('#main-grid');
         if (!grid){
             this.showErrorNotification("Cannot save export becuase there is no data displapyed to export.");
             return;
@@ -800,6 +1107,31 @@
         }
         return csv.join("\r\n");
     },
+
+    loadWsapiRecords: function(config,returnOperation){
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+                
+        var default_config = {
+            model: 'Defect',
+            fetch: ['ObjectID']
+        };
+        Ext.create('Rally.data.wsapi.Store', Ext.Object.merge(default_config,config)).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    if ( returnOperation ) {
+                        deferred.resolve(operation);
+                    } else {
+                        deferred.resolve(records);
+                    }
+                } else {
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+
     getQueryFilter: function(){
         var filter = this.getSetting('queryFilter');
         if (filter && filter.length > 0){
@@ -835,7 +1167,8 @@
         //return this.cycleTimeField;
     },
     getModelNames: function(){
-        var modelNames = this.getSetting('artifactType'); //includeTypes');
+        //var modelNames = this.getSetting('artifactType'); //includeTypes');
+        var modelNames = this.down('#cb-ArtifactType').getValue();
 
         //if (Ext.isString(modelNames)){
         //    modelNames = modelNames.split(',');
@@ -844,6 +1177,12 @@
         this.logger.log('getModelNames', modelNames);
         return [modelNames] || [];
     },
+    getArtifactBox: function(){
+        return this.down('#artifact_box');
+    }, 
+    getGranularityBox: function(){
+        return this.down('#granularity_box');
+    }, 
     getSelectorBox: function(){
         return this.down('#selector_box');
     },
@@ -851,7 +1190,7 @@
         return this.down('#grid_box');
     },
     getSettingsFields: function(){
-        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getModelNames());
+        return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getSettings());
     },
     getOptions: function() {
         return [

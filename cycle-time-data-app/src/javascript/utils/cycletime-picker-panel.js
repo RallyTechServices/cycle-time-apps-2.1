@@ -70,7 +70,9 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
                 scope: this
             }
         });
-        this.add({
+
+        this.add(
+            {
             xtype: 'container',
             flex: 1,
             layout: 'hbox',
@@ -309,7 +311,7 @@ Ext.define('CA.technicalservices.CycleTimePickerPanel', {
         }
     },
     _isCycleTimeField: function(field){
-        var whitelistFields = ['State','ScheduleState'];
+        var whitelistFields = ['State','ScheduleState','FlowState'];
 
         if (field.hidden){
             return false;

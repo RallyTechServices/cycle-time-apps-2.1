@@ -5,16 +5,23 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     granularity: 'day',
     creationDateText: "(Creation)",
     noStateText: "(No State)",
+    flowStates : {},
 
     getTimeInStateData: function(snapshots, field, value, dateField){
+
         snapshots = _.sortBy(snapshots, dateField);
 
         if (value === CArABU.technicalservices.CycleTimeCalculator.noStateText){
                 value = "";
         }
 
-        var inState = snapshots[0][field] === value,
-            startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+        var inState = snapshots[0][field] === value;
+            if(field == "FlowState"){
+                inState = this.flowStates[snapshots[0][field]] === value;
+            }
+
+        var startTime = inState ? Rally.util.DateTime.fromIsoString(snapshots[0][dateField]) : null;
+
 
         var info = [],
             idx = 0;
@@ -24,15 +31,19 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         }
         Ext.Array.each(snapshots, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap[dateField]);
-            if (inState && snap[field] !== value){
+            var snap_field = snap[field];
+            if(field == "FlowState"){
+                snap_field = this.flowStates[snap_field] || "";
+            }
+            if (inState && snap_field !== value){
                 info[idx].push(thisDate);
                 idx++;
                 inState = false;
-            } else if (!inState && snap[field] === value){
+            } else if (!inState && snap_field === value){
                 info[idx] = [thisDate];
                 inState = true;
             }
-        });
+        }, this);
         //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
@@ -63,9 +74,13 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         Ext.each(snaps, function(snap){
             var thisDate = Rally.util.DateTime.fromIsoString(snap._ValidFrom);
-            if (snap[field]){
+            var snap_field = snap[field];
+            if(field == "FlowState"){
+                snap_field = this.flowStates[snap_field] || "";
+            }            
+            if (snap_field){
                 previousStateIdx = stateIdx;
-                stateIdx = _.indexOf(precedence, snap[field]);
+                stateIdx = _.indexOf(precedence, snap_field);
             } else {
                 if (previousStateIdx > 0){
                     stateIdx = -1;
@@ -98,6 +113,7 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         granularity = granularity.toLowerCase();
         if (granularity === 'minute'){ return 60; }
         if (granularity === 'hour') { return 3600; }
+        if (granularity === 'week') { return 604800; }
         return 86400;  //default to day
     },
     calculateTimeInState: function(dateArrays){

@@ -1,7 +1,7 @@
 Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     logger: new Rally.technicalservices.Logger(),
 
-    MAX_CHUNK_SIZE: 40,
+    MAX_CHUNK_SIZE: 25,
     USE_POST: false,
 
     constructor: function(config){
@@ -64,8 +64,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
 
             var cycleTimeData = this._mungeCycleTimeData(snapshots);
             var timeInStateData = this._mungeTimeInStateData(snapshots);
-
-            if (this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
+            // console.log(cycleTimeData, timeInStateData);
+            if (cycleTimeData && this._isCycleInDateRange(cycleTimeData, this.startDate, this.endDate)){
                 r.set("cycleTimeData",cycleTimeData);
                 r.set("timeInStateData", timeInStateData);
                 updatedRecords.push(r);
@@ -75,7 +75,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         return updatedRecords;
     },
     _isCycleInDateRange: function(cycleTimeData, startDate, endDate){
-    //    console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
+        //console.log('_isCycleInDateRange', cycleTimeData.endDate, startDate, endDate);
         if (startDate && cycleTimeData.endDate < startDate){
             return false;
         }
@@ -115,7 +115,7 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
     },
     _fetchChunk: function(objectIDs){
         var deferred = Ext.create('Deft.Deferred');
-        this.logger.log('_fetchChunks', objectIDs.length);
+        //this.logger.log('_fetchChunks', objectIDs.length);
 
         Ext.create('Rally.data.lookback.SnapshotStore',{
             fetch: this._getFetchList(),
@@ -143,7 +143,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
                     deferred.resolve(records);
                 } else {
                     var msg = "Failure loading snapshots for objectIDs: " + objectIDs.join(', ') + ":  " + operation.error.errors.join(',');
-                    deferred.resolve(msg);
+                    console.log(msg);
+                    deferred.resolve([]);
                 }
             }
         });
