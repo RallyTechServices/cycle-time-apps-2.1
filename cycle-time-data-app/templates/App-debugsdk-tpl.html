@@ -10,7 +10,7 @@
         var CHECKSUM = [%= checksum %];
     </script>
 
-    <script type="text/javascript" src="/apps/<%= sdk %>/sdk.js"></script>
+    <script type="text/javascript" src="<%= auth.server %>/apps/<%= sdk %>/sdk-debug.js"></script>
     <!-- our highcharts (needed so that we can add patterns)
     <script type="text/javascript" src="/apps/<%= sdk %>/lib/analytics/analytics-all.js"></script>
     -->
@@ -18,18 +18,20 @@
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            <%= ugly_contents %>
+            <%= js_contents %>
 
-               Rally.launchApp('<%= className %>', {
-                   name: '<%= pkg.name %>'
-               });
+            Rally.launchApp('<%= className %>', {
+                name: '<%= pkg.name %>'
+            });
         });
     </script>
 
     <style type="text/css">
-<%= style_contents %>
+        <%=style_contents %>
     </style>
 
 </head>
+
 <body></body>
+
 </html>
