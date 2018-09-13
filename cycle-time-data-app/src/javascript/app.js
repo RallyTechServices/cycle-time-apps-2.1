@@ -515,14 +515,17 @@
 
         totals["CycleTime"] = 0;
         count["CycleTime"] = 0;
+        
+        totals["Time To Market"] = 0;
+        count["Time To Market"] = 0;
 
         if (includeBlocked){
-            totals["In Blocked"] = 0;
-            count["In Blocked"] = 0;
+            totals[TsConstants.LABEL.IN_BLOCKED] = 0;
+            count[TsConstants.LABEL.IN_BLOCKED] = 0;
         }
         if (includeReady){
-            totals["In Ready"] = 0;
-            count["In Ready"] = 0;
+            totals[TsConstants.LABEL.IN_READY] = 0;
+            count[TsConstants.LABEL.IN_READY] = 0;
         }
 
         for (var s = 0; s < states.length; s++){
@@ -530,52 +533,67 @@
                 totals[states[s]] = 0;
                 count[states[s]] = 0;
                 if(states[s] == this.getToStateValue()){
-                    s = states.length;
+                    break;
                 }                  
             }
         }
 
         for (var i = 0; i < updatedRecords.length; i++){
             var    record = updatedRecords[i];
-
+            var recordTimeToMarket = 0;
+            
             //CycleTime
             var timeInStateData = record.get('timeInStateData');
 
             if(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime && Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime) != 0){
                 totals["CycleTime"] +=  Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime);
-                count["CycleTime"]++                
+                count["CycleTime"]++;
+                count[TsConstants.LABELS.TIME_TO_MARKET]++;
             }
 
 
             if (includeBlocked){
                 var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
                 if(blocked_val != NaN && Number(blocked_val) != 0){
-                    totals["In Blocked"] += blocked_val;
-                    count["In Blocked"]++;                    
+                    totals[TsConstants.LABEL.IN_BLOCKED] += blocked_val;
+                    count[TsConstants.LABEL.IN_BLOCKED]++;                    
                 }
             }
             if (includeReady){
                 var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
                 if(ready_val !=  NaN && ready_val != 0){
-                    totals["In Ready"] += ready_val;
-                    count["In Ready"]++;                    
+                    totals[TsConstants.LABEL.IN_READY] += ready_val;
+                    count[TsConstants.LABEL.IN_READY]++;                    
                 }                
             }
 
+            var includeStateInTimeToMarket = false;
             for (var s = 0; s < states.length; s++){
                 if (timeInStateData && states[s] != ""){
+                    
+                    if ( states[s] == this.getFromStateValue() ) {
+                        includeStateInTimeToMarket = true
+                    }
 
                     var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                    
                     if(timeinstate_val !=  NaN && timeinstate_val != 0){
                         totals[states[s]] += timeinstate_val;
-                        count[states[s]]++;                    
+                        count[states[s]]++;
+                        
+                        if ( includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
+                            recordTimeToMarket += timeinstate_val;
+                            totals[TsConstants.LABELS.TIME_TO_MARKET] += timeinstate_val;
+                        }
                     }
+                    
                     if(states[s] == this.getToStateValue()){
-                        s = states.length;
+                        break;
                     }
 
                 } 
             }
+            record.set(TsConstants.LABELS.TIME_TO_MARKET, recordTimeToMarket);
 
         }
         
@@ -867,6 +885,9 @@
     getCycleTimeColumnHeader: function(){
         return Ext.String.format("Cycle time from {0} to {1} ({2}s)", this.getFromStateValue(), this.getToStateValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
+    getTimeToMarketColumnHeader: function(){
+        return Ext.String.format("Time to Market from {0} to {1} ({2}s)", this.getFromStateValue(), this.getToStateValue(), CArABU.technicalservices.CycleTimeCalculator.granularity);
+    },
     getCycleTimeStartColumnHeader: function(){
         return "Cycle Time Start Date";
     },
@@ -888,6 +909,19 @@
                 xtype: 'cycletimetemplatecolumn',
                 text: this.getCycleTimeColumnHeader(),
                 flex: 1
+            });
+            
+            columns.push({
+                xtype: 'cycletimetemplatecolumn',
+                text: this.getTimeToMarketColumnHeader(),
+                flex: 1,
+                renderer: function(value, meta, record) {
+                    return Ext.util.Format.round(record.get(TsConstants.LABELS.TIME_TO_MARKET),2);
+                    /*
+                    var data = Ext.apply({}, record.get('timeToMarketData'));
+                    return this.tpl.apply(data);
+                    */
+                }
             });
         }
 
