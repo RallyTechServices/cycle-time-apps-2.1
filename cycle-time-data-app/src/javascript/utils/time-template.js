@@ -128,3 +128,65 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
 });
 
+Ext.define('CArABU.technicalservices.TimeToMarketTemplateColumn', {
+    extend: 'Ext.grid.column.Template',
+    alias: ['widget.timetomarkettemplatecolumn'],
+
+    align: 'right',
+
+    initComponent: function(){
+        var me = this;
+
+        Ext.QuickTips.init();
+
+        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getTime(values)]}</div></tpl>',{
+            dataType: me.dataType,
+            stateName: me.stateName,
+            states: me.states,
+
+            getTime: function(values){
+                var result = Ext.util.Format.round(values.currentValue,2);
+                if ( !result || result.length === 0 ) {
+                    result = '--';
+                }
+                return result;
+            },
+            getTooltip: function(values){
+                var timeData = values['ScheduleState'];
+
+                if (!timeData || timeData.length === 0 ){
+                    return "";
+                }
+                
+                var toolTip = Ext.String.format("{0}: {1}<br/>",this.stateName, this.getTime(values));
+
+                _.each(this.states, function(state) {
+                    var stateData = timeData[state];
+                    if ( stateData ) {
+                        toolTip += Ext.String.format("{0}:<br/>",state);
+                        _.each(stateData, function(t){
+                            var startDate = t && t.length > 0 && Rally.util.DateTime.format(t[0], 'Y-m-d h:i:s a') || "";
+                            var endDate = t && t.length > 1 && Rally.util.DateTime.format(t[1], 'Y-m-d h:i:s a') || "current";
+                            if (startDate.length > 0){
+                                toolTip = toolTip + Ext.String.format("{0} - {1}<br/>",startDate, endDate);
+                            }
+                        });
+                    }
+                }, this);
+                
+                return toolTip;
+            }
+
+        });
+        me.hasCustomRenderer = true;
+        me.callParent(arguments);
+    },
+    
+    defaultRenderer: function(value, meta, record) {
+        var data = Ext.apply({}, record.get(this.dataType));
+        data.currentValue = record.get(this.stateName);
+        return this.tpl.apply(data);
+    }
+
+});
+

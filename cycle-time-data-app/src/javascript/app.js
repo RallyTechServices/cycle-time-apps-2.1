@@ -516,16 +516,16 @@
         totals["CycleTime"] = 0;
         count["CycleTime"] = 0;
         
-        totals["Time To Market"] = 0;
-        count["Time To Market"] = 0;
+        totals[TsConstants.LABELS.TIME_TO_MARKET] = 0;
+        count[TsConstants.LABELS.TIME_TO_MARKET] = 0;
 
         if (includeBlocked){
-            totals[TsConstants.LABEL.IN_BLOCKED] = 0;
-            count[TsConstants.LABEL.IN_BLOCKED] = 0;
+            totals[TsConstants.LABELS.IN_BLOCKED] = 0;
+            count[TsConstants.LABELS.IN_BLOCKED] = 0;
         }
         if (includeReady){
-            totals[TsConstants.LABEL.IN_READY] = 0;
-            count[TsConstants.LABEL.IN_READY] = 0;
+            totals[TsConstants.LABELS.IN_READY] = 0;
+            count[TsConstants.LABELS.IN_READY] = 0;
         }
 
         for (var s = 0; s < states.length; s++){
@@ -555,15 +555,15 @@
             if (includeBlocked){
                 var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
                 if(blocked_val != NaN && Number(blocked_val) != 0){
-                    totals[TsConstants.LABEL.IN_BLOCKED] += blocked_val;
-                    count[TsConstants.LABEL.IN_BLOCKED]++;                    
+                    totals[TsConstants.LABELS.IN_BLOCKED] += blocked_val;
+                    count[TsConstants.LABELS.IN_BLOCKED]++;                    
                 }
             }
             if (includeReady){
                 var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
                 if(ready_val !=  NaN && ready_val != 0){
-                    totals[TsConstants.LABEL.IN_READY] += ready_val;
-                    count[TsConstants.LABEL.IN_READY]++;                    
+                    totals[TsConstants.LABELS.IN_READY] += ready_val;
+                    count[TsConstants.LABELS.IN_READY]++;                    
                 }                
             }
 
@@ -745,6 +745,21 @@
     getCycleStates: function(){
         return this._gridConfig && this._gridConfig.cycleTimeParameters && this._gridConfig.cycleTimeParameters.cycleStates || [];
     },
+    getFromToStates: function() {
+        var states = this.getCycleStates();
+        var includeState = false;
+        var result = _.filter(states, function(state) {
+            if ( state === this.getFromStateValue() ) {
+                includeState = true;
+            } else if ( state === this.getToStateValue() ) {
+                includeState = false;
+            }
+            
+            return includeState;
+            
+        }, this);
+        return result;
+    },
     getGridColumns: function(){
         return this.down('fieldpickerbutton') && this.down('fieldpickerbutton').getFields();
         //return this._gridConfig && this._gridConfig.fields || [];
@@ -898,8 +913,6 @@
         return Ext.String.format("Time in {0} ({1}s)", stateName || "[No State]", CArABU.technicalservices.CycleTimeCalculator.granularity);
     },
     getHistoricalDataColumns: function(){
-
-
         var columns = [],
             toState = this.getToStateValue(),
             fromState = this.getFromStateValue();
@@ -912,16 +925,12 @@
             });
             
             columns.push({
-                xtype: 'cycletimetemplatecolumn',
+                xtype: 'timetomarkettemplatecolumn',
                 text: this.getTimeToMarketColumnHeader(),
+                dataType: 'timeInStateData',
+                stateName: TsConstants.LABELS.TIME_TO_MARKET,
+                states: this.getFromToStates(),
                 flex: 1,
-                renderer: function(value, meta, record) {
-                    return Ext.util.Format.round(record.get(TsConstants.LABELS.TIME_TO_MARKET),2);
-                    /*
-                    var data = Ext.apply({}, record.get('timeToMarketData'));
-                    return this.tpl.apply(data);
-                    */
-                }
             });
         }
 
