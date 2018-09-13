@@ -1,6 +1,6 @@
 {
   "name": "cycle-time-data-app",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "scripts": {
     "debug": "grunt debug",
     "debug:watch": "nodemon --exec grunt debug",
