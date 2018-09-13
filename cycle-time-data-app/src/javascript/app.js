@@ -1077,6 +1077,7 @@
         headers.push(this.getCycleTimeColumnHeader());
         headers.push(this.getCycleTimeStartColumnHeader());
         headers.push(this.getCycleTimeEndColumnHeader());
+        headers.push(this.getTimeToMarketColumnHeader());
 
         if (includeBlocked){
             headers.push(this.getTimeInStateColumnHeader("Blocked"));
@@ -1129,6 +1130,11 @@
 
             row.push(formattedStart);
             row.push(formattedEnd);
+            var ttm = Ext.util.Format.round(record.get(TsConstants.LABELS.TIME_TO_MARKET),2);
+                if ( !ttm || ttm.length === 0 ) {
+                    ttm = '--';
+                }
+            row.push(ttm);
 
             if (includeBlocked){
                 row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
