@@ -3,6 +3,9 @@
   "name": "cycle-time-data",
   "version": "1.0.0",
   "dependencies": {},
+  "scripts": {
+    "tsbuild:dev": "webpack --config node_modules/utils-app-builder/"
+  },
   "devDependencies": {
     "grunt": "~0.4.5",
     "grunt-cli": "0.1.6",
