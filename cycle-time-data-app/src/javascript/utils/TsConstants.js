@@ -1,9 +1,11 @@
 Ext.define('TsConstants', {
     statics: {
-        LABELS: {
-            TIME_TO_MARKET: 'Time To Market',
-            IN_BLOCKED: 'In Blocked',
-            IN_READY: 'In Ready'
-        }    
+        TIME_TO_MARKET: 'Time To Market',
+        IN_BLOCKED: 'In Blocked',
+        IN_READY: 'In Ready',
+        COUNTS: 'Counts',
+        AVERAGES: 'Averages',
+        NAME: 'Name',
+        NO_DATA: '--'
     }
 });

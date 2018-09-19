@@ -6,18 +6,14 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
 
     initComponent: function(){
         var me = this;
+        var app = Rally.getApp();
 
         Ext.QuickTips.init();
 
-        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCycleTime(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div data-qwidth="320" data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCycleTime(values)]}</div></tpl>',{
 
             getCycleTime: function(values){
-
-                var cycleTime = values && values.cycleTime ;
-                if (cycleTime >= 0){
-                    return cycleTime;
-                }
-                return '--';
+                return app.numFormatFunc(values.cycleTime);
             },
             getTooltip: function(values){
 
@@ -62,13 +58,13 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
         Ext.QuickTips.init();
 
-        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCurrentIcon(values)]}{[this.getTime(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div data-qwidth="320" data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCurrentIcon(values)]}{[this.getTime(values)]}</div></tpl>',{
             stateName: me.stateName,
             dataType: me.dataType,
             stateValue: me.stateValue,
 
             getTime: function(values){
-                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,'--');
+                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,TsConstants.NO_DATA);
             },
             getCurrentIcon: function(values){
                 if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
@@ -136,29 +132,26 @@ Ext.define('CArABU.technicalservices.TimeToMarketTemplateColumn', {
 
     initComponent: function(){
         var me = this;
+        var app = Rally.getApp();
 
         Ext.QuickTips.init();
 
-        me.tpl = new Ext.XTemplate('<tpl><div data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getTime(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div data-qwidth="320" data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getTime(values)]}</div></tpl>',{
             dataType: me.dataType,
-            stateName: me.stateName,
+            stateFieldName: me.stateFieldName,
             states: me.states,
 
             getTime: function(values){
-                var result = Ext.util.Format.round(values.currentValue,2);
-                if ( !result || result.length === 0 ) {
-                    result = '--';
-                }
-                return result;
+                return app.numFormatFunc(values.currentValue);
             },
             getTooltip: function(values){
-                var timeData = values['ScheduleState'];
+                var timeData = values[this.stateFieldName];
 
                 if (!timeData || timeData.length === 0 ){
                     return "";
                 }
                 
-                var toolTip = Ext.String.format("{0}: {1}<br/>",this.stateName, this.getTime(values));
+                var toolTip = Ext.String.format("{0}: {1}<br/>",TsConstants.TIME_TO_MARKET, this.getTime(values));
 
                 _.each(this.states, function(state) {
                     var stateData = timeData[state];
@@ -184,7 +177,7 @@ Ext.define('CArABU.technicalservices.TimeToMarketTemplateColumn', {
     
     defaultRenderer: function(value, meta, record) {
         var data = Ext.apply({}, record.get(this.dataType));
-        data.currentValue = record.get(this.stateName);
+        data.currentValue = record.get(TsConstants.TIME_TO_MARKET);
         return this.tpl.apply(data);
     }
 

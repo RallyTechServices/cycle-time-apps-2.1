@@ -47,6 +47,17 @@
        this.logger.log('Launch Settings', this.getSettings());
        var me = this;
        var pagesize = 2000;
+       
+       // Setup a reusable number formatter
+       var formatString = "0." + Ext.util.Format.leftPad('', this.getSetting('precision'), '0');
+       var numberRenderer = Ext.util.Format.numberRenderer(formatString);
+       this.numFormatFunc = function(value, noDataStr) {
+            var result = numberRenderer(value);
+            if ( result.length === 0) {
+                result = noDataStr || TsConstants.NO_DATA;
+            }
+            return result
+       }
 
         me.setLoading(true);
 
@@ -502,7 +513,8 @@
         console.log('Add Totals',updatedRecords);
         var me = this;
         var headers = [];
-        var totals = {"Name":"Totals"};
+        var totals = {}
+        totals[TsConstants.NAME] = "Totals";
         var count = {};
         var records = [];
 
@@ -516,16 +528,16 @@
         totals["CycleTime"] = 0;
         count["CycleTime"] = 0;
         
-        totals[TsConstants.LABELS.TIME_TO_MARKET] = 0;
-        count[TsConstants.LABELS.TIME_TO_MARKET] = 0;
+        totals[TsConstants.TIME_TO_MARKET] = 0;
+        count[TsConstants.TIME_TO_MARKET] = 0;
 
         if (includeBlocked){
-            totals[TsConstants.LABELS.IN_BLOCKED] = 0;
-            count[TsConstants.LABELS.IN_BLOCKED] = 0;
+            totals[TsConstants.IN_BLOCKED] = 0;
+            count[TsConstants.IN_BLOCKED] = 0;
         }
         if (includeReady){
-            totals[TsConstants.LABELS.IN_READY] = 0;
-            count[TsConstants.LABELS.IN_READY] = 0;
+            totals[TsConstants.IN_READY] = 0;
+            count[TsConstants.IN_READY] = 0;
         }
 
         for (var s = 0; s < states.length; s++){
@@ -548,22 +560,22 @@
             if(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime && Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime) != 0){
                 totals["CycleTime"] +=  Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime);
                 count["CycleTime"]++;
-                count[TsConstants.LABELS.TIME_TO_MARKET]++;
+                count[TsConstants.TIME_TO_MARKET]++;
             }
 
 
             if (includeBlocked){
                 var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
                 if(blocked_val != NaN && Number(blocked_val) != 0){
-                    totals[TsConstants.LABELS.IN_BLOCKED] += blocked_val;
-                    count[TsConstants.LABELS.IN_BLOCKED]++;                    
+                    totals[TsConstants.IN_BLOCKED] += blocked_val;
+                    count[TsConstants.IN_BLOCKED]++;                    
                 }
             }
             if (includeReady){
                 var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
                 if(ready_val !=  NaN && ready_val != 0){
-                    totals[TsConstants.LABELS.IN_READY] += ready_val;
-                    count[TsConstants.LABELS.IN_READY]++;                    
+                    totals[TsConstants.IN_READY] += ready_val;
+                    count[TsConstants.IN_READY]++;                    
                 }                
             }
 
@@ -583,7 +595,7 @@
                         
                         if ( includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
                             recordTimeToMarket += timeinstate_val;
-                            totals[TsConstants.LABELS.TIME_TO_MARKET] += timeinstate_val;
+                            totals[TsConstants.TIME_TO_MARKET] += timeinstate_val;
                         }
                     }
                     
@@ -593,7 +605,7 @@
 
                 } 
             }
-            record.set(TsConstants.LABELS.TIME_TO_MARKET, recordTimeToMarket);
+            record.set(TsConstants.TIME_TO_MARKET, recordTimeToMarket);
 
         }
         
@@ -602,13 +614,13 @@
             avg[key] = count[key] > 0 ? totals[key] / count[key] : 0; 
         })
 
-        avg["Name"] = "Averages";
-        count["Name"] = "Counts"
+        avg[TsConstants.NAME] = TsConstants.AVERAGES;
+        count[TsConstants.NAME] = TsConstants.COUNTS;
         console.log('totals/counts',totals,count,avg);
         var columns = [];
 
         _.each(Ext.Object.getKeys(totals),function(key){
-            if(key == "Name"){
+            if(key == TsConstants.NAME){
                 columns.push({
                     text: "",
                     dataIndex: key,
@@ -619,13 +631,18 @@
                     text: key,
                     dataIndex: key,
                     flex: 1,
-                    renderer: function(value){
-                        return Ext.util.Format.round(value,2);
+                    scope: this,
+                    renderer: function(value, metaData, record){
+                        if ( record.get(TsConstants.NAME) == TsConstants.COUNTS) {
+                            return value;
+                        } else {
+                            return this.numFormatFunc(value);
+                        }
                     }                
                 });                
             }
 
-        });
+        }, this);
 
         me.down('#total_box').removeAll();
         
@@ -928,7 +945,7 @@
                 xtype: 'timetomarkettemplatecolumn',
                 text: this.getTimeToMarketColumnHeader(),
                 dataType: 'timeInStateData',
-                stateName: TsConstants.LABELS.TIME_TO_MARKET,
+                stateFieldName: this.getStateField(),
                 states: this.getFromToStates(),
                 flex: 1,
             });
@@ -1130,10 +1147,8 @@
 
             row.push(formattedStart);
             row.push(formattedEnd);
-            var ttm = Ext.util.Format.round(record.get(TsConstants.LABELS.TIME_TO_MARKET),2);
-                if ( !ttm || ttm.length === 0 ) {
-                    ttm = '--';
-                }
+            // Don't display '--' in export
+            var ttm = this.numFormatFunc(record.get(TsConstants.TIME_TO_MARKET), '');
             row.push(ttm);
 
             if (includeBlocked){
