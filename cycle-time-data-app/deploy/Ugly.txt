@@ -3,11 +3,11 @@
 <head>
     <title>cycle-time-data-app-0.4.2</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Sep 19 2018 20:56:40 GMT+0000 (UTC) -->
+    <!--  Build Date: Wed Sep 19 2018 20:57:37 GMT+0000 (UTC) -->
 
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Sep 19 2018 20:56:40 GMT+0000 (UTC)";
-        var CHECKSUM = 142168571998;
+        var APP_BUILD_DATE = "Wed Sep 19 2018 20:57:37 GMT+0000 (UTC)";
+        var CHECKSUM = 142168574633;
     </script>
 
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
