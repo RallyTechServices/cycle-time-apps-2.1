@@ -1,6 +1,6 @@
 {
   "name": "cycle-time-data-app",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "scripts": {
     "debug": "grunt debug",
     "debug:watch": "nodemon --exec grunt debug",
@@ -27,7 +27,7 @@
     "watch": [
       "src/*", "templates/*", "*.json"
     ],
-    "ext": "js css",
+    "ext": "js css json",
     "verbose": true
   }
 }
