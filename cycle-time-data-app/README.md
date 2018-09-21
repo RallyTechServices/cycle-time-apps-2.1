@@ -1,6 +1,6 @@
-#Cycle Time Data
+# Cycle Time Data
 
-####Cycle Time Field
+#### Cycle Time Field
 The fields available for the Cycle Time field will be determined by the artifact types selected in the App Settings.  
 If both User Stories and Defects are selected in the App Settings, then the fields available for the State will the fields on the Story, otherwise, they will be the fields on the only artifact type selected.
 
@@ -17,37 +17,42 @@ If a date is selected, the chart will only calculate cycle time for
   
 Select the Ready and/or Blocked toggles to show the time in Ready and/or Blocked
 
-Hover over the Time In State or Cycle Time calculations to see the dates used in the calculation.
+Hover over the Time In State, Cycle Time or Time To Market calculations to see the dates used in the calculation. Time in state values
+smaller than the `Ignore values less than` setting will be thrown out and displayed as `--` (or blank in the exported CSV).
 
-###Cycle Time Calculations:
+### Cycle Time Calculations:
 *  Cycle time is the time from the first time the field enters or transitions past the "From State" to the last time the field enters or transitions past the "To State".  
 *  If an object moved into the "To State" and then back into a state prior to the "To State", the cycle time will be 0 as the object is considered not to have completed the cycle.  
 
-###Time in State: 
+### Time To Market Calculations:
+* If there is a cycle time, then also compute the Time to Market which is the straight sum of the time spent in the selected states.
+In cases where the artifact did not flow linearly through the states, this represents the actual time spend working on the item.
+
+### Time in State: 
 *  Time In State for a State is a cumulative sum.
 *  Time in State for boolean fields (Ready, Blocked) is the cumulative sum of the time that field value is true.    
 *  Time in State does not exclude weekends.  
 *  The time in state for the current State will include the time that object transitioned into the field until the current date and time.
 *  If an object has been in the same state since it was created, the Time in State will be the entire lifetime of the object until the current date time.    
 
-###Legacy States
+### Legacy States
 The Cycle Time app uses current allowed values for the selected field to get a state precedence when calculating cycle time.
 Thus, if an item was in a state that no longer exists in the allowed values (aka Legacy State), it will not be recognized and will be treated the same as "no state".  
 The reason for this is becuase we cannot determine where in the precedence order of states the legacy state existed.
 
-##Exports
+## Exports
 
-###Export Summary...
+### Export Summary...
 Cycle time and Time in State summary data can be exported using this menu item of the grid.  There will be one row per artifact shown on the grid that contains the selected cycle time data and all time in state data.  
 
 Cycle Time Start Date and Cycle time end date are also exported with the Summary.  
 Cycle Time Start Date is first date/time that the item enters the selected Start state.  
 Cycle Time End Date is the last time that the item enters the selected End state.  
 
-###Export with Timestamps...
+### Export with Timestamps...
 This option will export a row for each state transition for the selected state field for all artifacts on the grid. 
  
-####Export limits
+#### Export limits
  Due to the volume of data that is being returned when doing cycletime calculations, the number of artifacts that can be exported with cycle time\time in state data is set to 1000.  Please note if there 
  are more artifacts in the grid than the limit, you will be notified and only 1000 artifacts will be exported.  
  
