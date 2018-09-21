@@ -101,8 +101,8 @@ Ext.define('CArABU.technicalservices.CycleTimeDataStore',{
         }
        var timeInStateData =  {snaps: snapshots};
 
-        timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom","minute");
-        timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom","minute");
+        timeInStateData.Blocked = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Blocked", true, "_ValidFrom");
+        timeInStateData.Ready = CArABU.technicalservices.CycleTimeCalculator.getTimeInStateData(snapshots, "Ready", true, "_ValidFrom");
         var stateField = this.stateField;
 
         timeInStateData[stateField] = {};

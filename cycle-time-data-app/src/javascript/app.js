@@ -36,11 +36,11 @@
             artifactType: 'HierarchicalRequirement',
             queryFilter: "",
             granularity: 'day',
-            precision: 2,
+            minValue: 0.01,
             exportLimit: 1000
         }
     },
-    exportDateFormat: 'm/d/Y h:i:s',
+    exportDateFormat: 'm/d/Y H:i:s',
     _gridConfig: {},
 
     launch: function() {
@@ -49,14 +49,27 @@
        var pagesize = 2000;
        
        // Setup a reusable number formatter
-       var formatString = "0." + Ext.util.Format.leftPad('', this.getSetting('precision'), '0');
-       var numberRenderer = Ext.util.Format.numberRenderer(formatString);
-       this.numFormatFunc = function(value, noDataStr) {
-            var result = numberRenderer(value);
-            if ( result.length === 0) {
-                result = noDataStr || TsConstants.NO_DATA;
-            }
-            return result
+       var minValue = this.getSetting('minValue');
+       var numberRenderer = Ext.util.Format.numberRenderer(minValue.toString());
+       
+        this.meetsMinThreshold = function(value) {
+           return value != null && value >= minValue;
+       }
+       
+       this.renderFormatter = function(value) {
+           var result = TsConstants.NO_DATA;
+           if (this.meetsMinThreshold(value)) {
+               result = numberRenderer(value);
+           }
+           return result;
+       }
+       
+       this.exportFormatter = function(value) {
+           var result = null;
+           if (this.meetsMinThreshold(value)) {
+               result = value;
+           }
+           return result;
        }
 
         me.setLoading(true);
@@ -437,7 +450,6 @@
      updateGrid: function(){
          CArABU.technicalservices.CycleTimeCalculator.startDate = this.getStartDate();
          CArABU.technicalservices.CycleTimeCalculator.endDate = this.getEndDate();
-         CArABU.technicalservices.CycleTimeCalculator.precision = this.getSetting('precision');
          CArABU.technicalservices.CycleTimeCalculator.granularity = this.down('#granularity') && this.down('#granularity').getValue()  && this.down('#granularity').getValue().granularity;
 
          this.getGridBox().removeAll();
@@ -552,28 +564,32 @@
 
         for (var i = 0; i < updatedRecords.length; i++){
             var    record = updatedRecords[i];
-            var recordTimeToMarket = 0;
+            var recordTimeToMarket = null;
             
             //CycleTime
             var timeInStateData = record.get('timeInStateData');
 
-            if(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime && Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime) != 0){
-                totals["CycleTime"] +=  Number(record.get('cycleTimeData') && record.get('cycleTimeData').cycleTime);
+            // null and tiny values are excluded from the totals
+            var recordHasCycleTime = false;
+            if(record.get('cycleTimeData') && this.meetsMinThreshold(record.get('cycleTimeData').cycleTime)){
+                totals["CycleTime"] +=  record.get('cycleTimeData').cycleTime;
                 count["CycleTime"]++;
                 count[TsConstants.TIME_TO_MARKET]++;
+                recordTimeToMarket = 0; // There is a non-null cycle time so there will be a non-null time to market (although it might be zero)
+                recordHasCycleTime = true;
             }
 
 
             if (includeBlocked){
-                var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,""));
-                if(blocked_val != NaN && Number(blocked_val) != 0){
+                var blocked_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null));
+                if(this.meetsMinThreshold(blocked_val)){
                     totals[TsConstants.IN_BLOCKED] += blocked_val;
                     count[TsConstants.IN_BLOCKED]++;                    
                 }
             }
             if (includeReady){
-                var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null,""));
-                if(ready_val !=  NaN && ready_val != 0){
+                var ready_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null));
+                if(this.meetsMinThreshold(ready_val)){
                     totals[TsConstants.IN_READY] += ready_val;
                     count[TsConstants.IN_READY]++;                    
                 }                
@@ -587,13 +603,14 @@
                         includeStateInTimeToMarket = true
                     }
 
-                    var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), ""));
+                    var timeinstate_val = Number(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s])));
                     
-                    if(timeinstate_val !=  NaN && timeinstate_val != 0){
+                    if(this.meetsMinThreshold(timeinstate_val)){
                         totals[states[s]] += timeinstate_val;
                         count[states[s]]++;
                         
-                        if ( includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
+                          // Only include in time to market total (and per-record) if the record has a cycle time
+                        if ( recordHasCycleTime && includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
                             recordTimeToMarket += timeinstate_val;
                             totals[TsConstants.TIME_TO_MARKET] += timeinstate_val;
                         }
@@ -606,7 +623,6 @@
                 } 
             }
             record.set(TsConstants.TIME_TO_MARKET, recordTimeToMarket);
-
         }
         
         var avg = {};
@@ -636,7 +652,7 @@
                         if ( record.get(TsConstants.NAME) == TsConstants.COUNTS) {
                             return value;
                         } else {
-                            return this.numFormatFunc(value);
+                            return this.renderFormatter(value);
                         }
                     }                
                 });                
@@ -1065,13 +1081,13 @@
     saveExportFiles: function(updatedRecords, columns, includeTimestamps, includeSummary){
 
         if (includeSummary){
-            var filename = Ext.String.format("cycle-time-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
+            var filename = Ext.String.format("cycle-time-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-H-i-s')),
                 csv = this.getExportSummaryCSV(updatedRecords, columns);
            // this.logger.log('saveExportFiles', csv, filename);
             CArABU.technicalservices.Exporter.saveCSVToFile(csv, filename);
         }
         if (includeTimestamps){
-            var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-h-i-s')),
+            var filename = Ext.String.format("time-in-state-{0}.csv", Rally.util.DateTime.format(new Date(), 'Y-m-d-H-i-s')),
                 timeStampCSV = this.getExportTimestampCSV(updatedRecords);
            // this.logger.log('saveExportFiles', timeStampCSV);
             CArABU.technicalservices.Exporter.saveCSVToFile(timeStampCSV, filename);
@@ -1081,7 +1097,6 @@
         return CArABU.technicalservices.CycleTimeCalculator.getExportTimestampCSV(updatedRecords, this.exportDateFormat);
     },
     getExportSummaryCSV: function(updatedRecords, columns){
-        var formatString = "0." + Ext.util.Format.leftPad('', this.getSetting('precision'), '0');
         var standardColumns = _.filter(columns, function(c){ return c.dataIndex || null; }),
             headers = _.map(standardColumns, function(c){ if (c.text === "ID") {return "Formatted ID"; } return c.text; }),
             fetchList = _.map(standardColumns, function(c){ return c.dataIndex; });
@@ -1137,8 +1152,7 @@
             }
             //CycleTime
             var timeInStateData = record.get('timeInStateData');
-
-            row.push(record.get('cycleTimeData') && this.numFormatFunc(record.get('cycleTimeData').cycleTime, formatString));
+            row.push(record.get('cycleTimeData') && this.exportFormatter(record.get('cycleTimeData').cycleTime));
 
             var startDate = record.get('cycleTimeData') && record.get('cycleTimeData').startDate || null,
                 endDate = record.get('cycleTimeData') && record.get('cycleTimeData').endDate || null;
@@ -1148,26 +1162,23 @@
 
             row.push(formattedStart);
             row.push(formattedEnd);
-            // Don't display '--' in export
-            var ttm = this.numFormatFunc(record.get(TsConstants.TIME_TO_MARKET), formatString);
-            row.push(ttm);
+            row.push(this.exportFormatter(record.get(TsConstants.TIME_TO_MARKET)));
 
             if (includeBlocked){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null,formatString));
+                row.push(this.exportFormatter(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Blocked",null)));
             }
             if (includeReady){
-                row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null, formatString));
+                row.push(this.exportFormatter(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData, "Ready",null)));
             }
 
             for (var s = 0; s < states.length; s++){
                 if (timeInStateData){
-                    row.push(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]), formatString));
+                    row.push(this.exportFormatter(CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(timeInStateData[stateField], states[s], record.get(states[s]))));
                 } else {
-                    row.push("");
+                    row.push(null);
                 }
             }
 
-            row = _.map(row, function(v){ return Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));});
             csv.push(row.join(","));
         }
         return csv.join("\r\n");
@@ -1273,10 +1284,4 @@
     isExternal: function(){
         return typeof(this.getAppId()) == 'undefined';
     },
-    //onSettingsUpdate:  Override
-    onSettingsUpdate: function (settings){
-        this.logger.log('onSettingsUpdate',settings);
-        // Ext.apply(this, settings);
-        this.addSelectors();
-    }
 });
