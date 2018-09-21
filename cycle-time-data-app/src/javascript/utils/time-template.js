@@ -13,7 +13,7 @@ Ext.define('CArABU.technicalservices.CycleTimeTemplateColumn', {
         me.tpl = new Ext.XTemplate('<tpl><div data-qwidth="320" data-qtip="{[this.getTooltip(values)]}" style="cursor:pointer;text-align:right;">{[this.getCycleTime(values)]}</div></tpl>',{
 
             getCycleTime: function(values){
-                return app.numFormatFunc(values.cycleTime);
+                return app.renderFormatter(values.cycleTime);
             },
             getTooltip: function(values){
 
@@ -55,6 +55,7 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
 
     initComponent: function(){
         var me = this;
+        var app = Rally.getApp();
 
         Ext.QuickTips.init();
 
@@ -64,7 +65,8 @@ Ext.define('CArABU.technicalservices.TimeTemplateColumn', {
             stateValue: me.stateValue,
 
             getTime: function(values){
-                return CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue,TsConstants.NO_DATA);
+                var result = CArABU.technicalservices.CycleTimeCalculator.getRenderedTimeInStateValue(values,this.stateName,this.stateValue);
+                return app.renderFormatter(result);
             },
             getCurrentIcon: function(values){
                 if (values.currentValue && (values.currentValue === true || values.currentValue === this.stateValue)){
@@ -142,7 +144,7 @@ Ext.define('CArABU.technicalservices.TimeToMarketTemplateColumn', {
             states: me.states,
 
             getTime: function(values){
-                return app.numFormatFunc(values.currentValue);
+                return app.renderFormatter(values.currentValue);
             },
             getTooltip: function(values){
                 var timeData = values[this.stateFieldName];

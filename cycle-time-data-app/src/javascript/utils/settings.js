@@ -68,6 +68,17 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
         // },
         {
             xtype: 'rallynumberfield',
+            fieldLabel: 'Ignore values less than',
+            name: 'minValue',
+            allowDecimals: true,
+            minValue: 0,
+            step: 0.001,
+            decimalPrecision: 8,
+            labelAlign: 'right',
+            labelWidth: 100,
+        },
+        {
+            xtype: 'rallynumberfield',
             fieldLabel: 'Max Export Limit',
             name: 'exportLimit',
             labelAlign: 'right',

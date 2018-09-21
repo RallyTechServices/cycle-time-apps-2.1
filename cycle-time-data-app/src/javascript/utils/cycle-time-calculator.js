@@ -1,7 +1,5 @@
 Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
     singleton: true,
-
-    precision: 0,  //number of decimal mpoints
     granularity: 'day',
     creationDateText: "(Creation)",
     noStateText: "(No State)",
@@ -44,7 +42,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
                 inState = true;
             }
         }, this);
-        //console.log('getTimeInStateData', field, value, snapshots[0].FormattedID, info);
         return info
     },
 
@@ -104,7 +101,6 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
 
         if (cycleTime) {
             cycleTime = cycleTime / CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
-            cycleTime = cycleTime.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
         }
 
         return { cycleTime: cycleTime, endDate: endDate, startDate: startDate};
@@ -117,30 +113,31 @@ Ext.define('CArABU.technicalservices.CycleTimeCalculator',{
         return 86400;  //default to day
     },
     calculateTimeInState: function(dateArrays){
-        var timeInState = 0;
+        var timeInState = null;
+        
+        if (dateArrays && dateArrays.length != 0){
+            timeInState = 0;
+    
+            Ext.Array.each(dateArrays, function(a){
+                var startDate = (a.length > 0) && a[0] || null,
+                    endDate = (a.length > 1) && a[1] || new Date();
+    
+                if (startDate && endDate){
+                    timeInState = timeInState + Rally.util.DateTime.getDifference(endDate, startDate, 'second');
+                }
+    
+            });
+            timeInState = timeInState/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
+        }
 
-        Ext.Array.each(dateArrays, function(a){
-            var startDate = (a.length > 0) && a[0] || null,
-                endDate = (a.length > 1) && a[1] || new Date();
-
-            if (startDate && endDate){
-                timeInState = timeInState + Rally.util.DateTime.getDifference(endDate, startDate, 'second');
-            }
-
-        });
-        timeInState = timeInState/CArABU.technicalservices.CycleTimeCalculator.getGranularityMultiplier(CArABU.technicalservices.CycleTimeCalculator.granularity);
-
-        return timeInState.toFixed(CArABU.technicalservices.CycleTimeCalculator.precision);
+        // May be null if no dateArrays given
+        return timeInState;
     },
-    getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue, noDataText){
+    getRenderedTimeInStateValue: function(timeInStateData, stateName, stateValue){
 
             var timeData = timeInStateData && timeInStateData[stateName];
             if (timeData && stateValue){
                 timeData = timeData[stateValue];
-            }
-
-            if (!timeData || timeData.length === 0){
-                return noDataText;
             }
 
             return CArABU.technicalservices.CycleTimeCalculator.calculateTimeInState(timeData);
