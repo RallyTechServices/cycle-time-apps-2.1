@@ -1179,6 +1179,13 @@
                 }
             }
 
+            row = _.map(row, function(v){
+                var result = v;
+                if ( v ) {
+                    result = Ext.String.format("\"{0}\"", v.toString().replace(/"/g, "\"\""));
+                }
+                return result;
+            });
             csv.push(row.join(","));
         }
         return csv.join("\r\n");

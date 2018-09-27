@@ -71,7 +71,7 @@ Ext.define('CArABU.technicalservices.CycleTimeData.Settings',{
             fieldLabel: 'Ignore values less than',
             name: 'minValue',
             allowDecimals: true,
-            minValue: 0,
+            minValue: 0.000001,
             step: 0.001,
             decimalPrecision: 8,
             labelAlign: 'right',
