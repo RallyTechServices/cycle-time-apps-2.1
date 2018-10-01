@@ -98,3 +98,15 @@ Ext.override(Rally.ui.grid.TreeGrid, {
     }
 });
 
+Ext.override(Ext.form.RadioGroup, {
+   getState: function() {
+       var state = this.callParent(arguments) || {};
+       return _.merge(state, this.getValue());
+   },
+
+   applyState: function(state) {
+       this.callParent(arguments);
+       this.setValue(state);
+   }
+});
+
