@@ -570,13 +570,9 @@
             var timeInStateData = record.get('timeInStateData');
 
             // null and tiny values are excluded from the totals
-            var recordHasCycleTime = false;
             if(record.get('cycleTimeData') && this.meetsMinThreshold(record.get('cycleTimeData').cycleTime)){
                 totals["CycleTime"] +=  record.get('cycleTimeData').cycleTime;
                 count["CycleTime"]++;
-                count[TsConstants.TIME_TO_MARKET]++;
-                recordTimeToMarket = 0; // There is a non-null cycle time so there will be a non-null time to market (although it might be zero)
-                recordHasCycleTime = true;
             }
 
 
@@ -609,8 +605,7 @@
                         totals[states[s]] += timeinstate_val;
                         count[states[s]]++;
                         
-                          // Only include in time to market total (and per-record) if the record has a cycle time
-                        if ( recordHasCycleTime && includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
+                        if ( includeStateInTimeToMarket && states[s] != this.getToStateValue()) {
                             recordTimeToMarket += timeinstate_val;
                             totals[TsConstants.TIME_TO_MARKET] += timeinstate_val;
                         }
@@ -623,6 +618,9 @@
                 } 
             }
             record.set(TsConstants.TIME_TO_MARKET, recordTimeToMarket);
+            if ( this.meetsMinThreshold(recordTimeToMarket)) {
+                count[TsConstants.TIME_TO_MARKET]++;
+            }
         }
         
         var avg = {};
@@ -1274,19 +1272,6 @@
     },
     getSettingsFields: function(){
         return CArABU.technicalservices.CycleTimeData.Settings.getFields(this.getSettings());
-    },
-    getOptions: function() {
-        return [
-            {
-                text: 'About...',
-                handler: this._launchInfo,
-                scope: this
-            }
-        ];
-    },
-    _launchInfo: function() {
-        if ( this.about_dialog ) { this.about_dialog.destroy(); }
-        this.about_dialog = Ext.create('Rally.technicalservices.InfoLink',{});
     },
     isExternal: function(){
         return typeof(this.getAppId()) == 'undefined';
